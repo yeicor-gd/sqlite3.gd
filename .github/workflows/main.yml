@@ -282,7 +282,7 @@ jobs:
           cp -f $files demo/addons/*/
 
       - name: Upload addon artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: gdext-${{ matrix.target.vcpkg_triplet }}-${{ matrix.target-type }}-${{ matrix.float-precision }}-${{ matrix.target.threads || '' }}
           path: |
@@ -290,7 +290,7 @@ jobs:
             .fake-path-to-force-root-directory
 
       - name: Upload vcpkg installed artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: vcpkg-installed-${{ matrix.target.vcpkg_triplet }}-${{ matrix.target-type }}-${{ matrix.float-precision }}-${{ matrix.target.threads || '' }}
@@ -300,7 +300,7 @@ jobs:
             /.fake-path-to-force-root-directory
 
       - name: Upload vcpkg buildtrees artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: vcpkg-buildtrees-packages-${{ matrix.target.vcpkg_triplet }}-${{ matrix.target-type }}-${{ matrix.float-precision }}-${{ matrix.target.threads || '' }}
@@ -335,7 +335,7 @@ jobs:
           submodules: recursive
 
       - name: Download addon artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: gdext-*
           merge-multiple: true
@@ -393,7 +393,7 @@ jobs:
 
       - name: Upload demo export artifact
         if: matrix.godot-version == needs.read-versions.outputs.godot_max_version
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: demo-export-${{ env.EXPORT_NAME }}-${{ matrix.mode }}
           path: demo/exports/**
@@ -411,7 +411,7 @@ jobs:
 
       - name: Upload addon artifact
         if: matrix.target.export_name == 'Linux' && matrix.mode == 'release' && matrix.godot-version == needs.read-versions.outputs.godot_max_version
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.event.repository.name }}-${{ env.MODIFIED_REF }}-addon
           path: addon-export
@@ -424,7 +424,7 @@ jobs:
       contents: write
     steps:
       - name: Download addon artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: ${{ github.event.repository.name }}-${{ github.ref_name }}-addon
           path: .
@@ -458,7 +458,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Download web demo artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: demo-export-web-release
           path: web
