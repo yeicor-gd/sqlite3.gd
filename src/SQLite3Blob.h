@@ -13,7 +13,7 @@
  * This file is part of SQLite3.gd bindings.
  */
 
-#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
 
 #include <sqlite3.h>
