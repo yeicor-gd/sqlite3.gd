@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<class name="SQLite3" inherits="Object">
+  <brief>A static class wrapping SQLite3 C API and constants for Godot 4.6 via GDExtension.</brief>
+  <description>
+    All SQLite3 functions, constants, macros, typedefs, enums, and structs are exposed as static methods/properties. Signatures mimic the C API as closely as possible. Exhaustive coverage and valid for debug builds.
+  </description>
+  <method name="SQLITE_OK"><brief>Return the constant SQLITE_OK (0).</brief></method>
+  <method name="SQLITE_ERROR"><brief>Return the constant SQLITE_ERROR (1).</brief></method>
+  <method name="SQLITE_INTERNAL"><brief>Return the constant SQLITE_INTERNAL (2).</brief></method>
+  <method name="SQLITE_PERM"><brief>Return the constant SQLITE_PERM (3).</brief></method>
+  <method name="SQLITE_ABORT"><brief>Return the constant SQLITE_ABORT (4).</brief></method>
+  <method name="SQLITE_BUSY"><brief>Return the constant SQLITE_BUSY (5).</brief></method>
+  <method name="SQLITE_LOCKED"><brief>Return the constant SQLITE_LOCKED (6).</brief></method>
+  <method name="SQLITE_NOMEM"><brief>Return the constant SQLITE_NOMEM (7).</brief></method>
+  <method name="SQLITE_READONLY"><brief>Return the constant SQLITE_READONLY (8).</brief></method>
+  <method name="SQLITE_INTERRUPT"><brief>Return the constant SQLITE_INTERRUPT (9).</brief></method>
+  <method name="SQLITE_IOERR"><brief>Return the constant SQLITE_IOERR (10).</brief></method>
+  <method name="SQLITE_CORRUPT"><brief>Return the constant SQLITE_CORRUPT (11).</brief></method>
+  <method name="SQLITE_NOTFOUND"><brief>Return the constant SQLITE_NOTFOUND (12).</brief></method>
+  <method name="SQLITE_FULL"><brief>Return the constant SQLITE_FULL (13).</brief></method>
+  <method name="SQLITE_CANTOPEN"><brief>Return the constant SQLITE_CANTOPEN (14).</brief></method>
+  <method name="SQLITE_PROTOCOL"><brief>Return the constant SQLITE_PROTOCOL (15).</brief></method>
+  <method name="SQLITE_EMPTY"><brief>Return the constant SQLITE_EMPTY (16).</brief></method>
+  <method name="SQLITE_SCHEMA"><brief>Return the constant SQLITE_SCHEMA (17).</brief></method>
+  <method name="SQLITE_TOOBIG"><brief>Return the constant SQLITE_TOOBIG (18).</brief></method>
+  <method name="SQLITE_CONSTRAINT"><brief>Return the constant SQLITE_CONSTRAINT (19).</brief></method>
+  <method name="SQLITE_MISMATCH"><brief>Return the constant SQLITE_MISMATCH (20).</brief></method>
+  <method name="SQLITE_MISUSE"><brief>Return the constant SQLITE_MISUSE (21).</brief></method>
+  <method name="SQLITE_NOLFS"><brief>Return the constant SQLITE_NOLFS (22).</brief></method>
+  <method name="SQLITE_AUTH"><brief>Return the constant SQLITE_AUTH (23).</brief></method>
+  <method name="SQLITE_FORMAT"><brief>Return the constant SQLITE_FORMAT (24).</brief></method>
+  <method name="SQLITE_RANGE"><brief>Return the constant SQLITE_RANGE (25).</brief></method>
+  <method name="SQLITE_NOTADB"><brief>Return the constant SQLITE_NOTADB (26).</brief></method>
+  <method name="SQLITE_NOTICE"><brief>Return the constant SQLITE_NOTICE (27).</brief></method>
+  <method name="SQLITE_WARNING"><brief>Return the constant SQLITE_WARNING (28).</brief></method>
+  <method name="SQLITE_ROW"><brief>Return the constant SQLITE_ROW (100).</brief></method>
+  <method name="SQLITE_DONE"><brief>Return the constant SQLITE_DONE (101).</brief></method>
+  <method name="SQLITE_ERROR_MISSING_COLLSEQ"><brief>Return the composite error SQLITE_ERROR_MISSING_COLLSEQ.</brief></method>
+  <method name="SQLITE_ERROR_RETRY"><brief>Return the composite error SQLITE_ERROR_RETRY.</brief></method>
+  <method name="SQLITE_IOERR_READ"><brief>Return the composite IO error SQLITE_IOERR_READ.</brief></method>
+  <method name="SQLITE_IOERR_SHORT_READ"><brief>Return the composite IO error SQLITE_IOERR_SHORT_READ.</brief></method>
+  <method name="sqlite3_libversion_number"><brief>Return the SQLite3 library version number.</brief></method>
+  <method name="sqlite3_libversion"><brief>Return the SQLite3 library version string.</brief></method>
+  <method name="sqlite3_sourceid"><brief>Return the SQLite3 library source ID string.</brief></method>
+  <method name="sqlite3_threadsafe"><brief>Return the SQLite3 threadsafe flag.</brief></method>
+  <method name="sqlite3_close"><brief>Close a database (external pointer).</brief><param name="db_ptr" type="int"></param></method>
+  <method name="sqlite3_close_v2"><brief>Close a database (external pointer), v2 variant.</brief><param name="db_ptr" type="int"></param></method>
+  <method name="sqlite3_exec"><brief>Run SQL statement. Returns error code.</brief><param name="db_ptr" type="int"></param><param name="sql" type="String"></param></method>
+</class>

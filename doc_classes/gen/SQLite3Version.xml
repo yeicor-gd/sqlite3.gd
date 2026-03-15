@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SQLite3Version" inherits="Object">
+    <brief_description>Provides access to Sqlite3 version information and core constants, mirroring the native C API.</brief_description>
+    <description>
+        This class exposes static methods and constants related to the SQLite3 library version, source ID, SCM branch/tag, and core C API results.
+        All data is directly fetched from the sqlite3.h header and corresponding API calls, matching the original API closely.
+    </description>
+    <methods>
+        <method name="get_version" qualifiers="static">
+            <return type="String" />
+            <description>Returns the SQLITE_VERSION constant.</description>
+        </method>
+        <method name="get_version_number" qualifiers="static">
+            <return type="int" />
+            <description>Returns the SQLITE_VERSION_NUMBER constant.</description>
+        </method>
+        <method name="get_source_id" qualifiers="static">
+            <return type="String" />
+            <description>Returns the SQLITE_SOURCE_ID constant.</description>
+        </method>
+        <method name="get_scm_branch" qualifiers="static">
+            <return type="String" />
+            <description>Returns the SQLITE_SCM_BRANCH constant.</description>
+        </method>
+        <method name="get_scm_tags" qualifiers="static">
+            <return type="String" />
+            <description>Returns the SQLITE_SCM_TAGS constant.</description>
+        </method>
+        <method name="get_scm_datetime" qualifiers="static">
+            <return type="String" />
+            <description>Returns the SQLITE_SCM_DATETIME constant.</description>
+        </method>
+        <method name="libversion" qualifiers="static">
+            <return type="String" />
+            <description>Returns the result of sqlite3_libversion().</description>
+        </method>
+        <method name="libversion_number" qualifiers="static">
+            <return type="int" />
+            <description>Returns the result of sqlite3_libversion_number().</description>
+        </method>
+        <method name="sourceid" qualifiers="static">
+            <return type="String" />
+            <description>Returns the result of sqlite3_sourceid().</description>
+        </method>
+    </methods>
+</class>
