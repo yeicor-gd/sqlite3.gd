@@ -17,6 +17,9 @@ func _log(msg: String, level: String = "INFO"):
 		log_label.text += formatted_msg + "\n"
 
 func _ready():
+	# Start with autowrapper tests
+	TestAutowrapper.run()
+	
 	var start_time = Time.get_ticks_usec()
 	_log("Starting Comprehensive SQLite3 Demo: Modular Test Suite", "START")
 
@@ -34,6 +37,7 @@ func _ready():
 	# Close database
 	db.close()
 	_log("Database closed", "END")
+	
 	var duration = float(Time.get_ticks_usec() - start_time) / 1000000.0
 	_log("Demo finished successfully in %.3f seconds!" % duration, "END")  # DO-NOT-EDIT: Checked by CI
 

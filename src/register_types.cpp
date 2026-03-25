@@ -11,9 +11,13 @@
 #include "SQLite3Backup.h"
 #include "SQLite3Blob.h"
 
+#include "autowrapper/SqliteWrapper_module.h"
+
 using namespace godot;
 
 void gdext_initialize_module(ModuleInitializationLevel p_level) {
+    gdext_initialize_module_auto(p_level);
+
     if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
         return;
     }
@@ -28,6 +32,8 @@ void gdext_initialize_module(ModuleInitializationLevel p_level) {
 }
 
 void gdext_uninitialize_module(ModuleInitializationLevel p_level) {
+    gdext_uninitialize_module_auto(p_level);
+
     if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
         return;
     }
