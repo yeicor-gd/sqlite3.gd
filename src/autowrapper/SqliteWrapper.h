@@ -707,13 +707,13 @@ public:
     int complete16(String sql);
     int64_t malloc64(uint64_t size);
     int busy_handler(Ref<Sqlite3Handle> db, Callable on_busy);
-    void free_table(intptr_t result_ptr);
+    void free_table(int64_t result_ptr);
     bool is_interrupted(Ref<Sqlite3Handle> db);
     void free_ptr(int64_t ptr);
     int64_t memory_highwater(bool reset);
     int64_t realloc(int64_t ptr, int size);
     int64_t realloc64(int64_t ptr, uint64_t size);
-    intptr_t malloc(int size);
+    int64_t malloc(int size);
     int64_t memory_used(void);
     uint64_t msize(int64_t ptr);
     void randomness(int length, int64_t buffer_ptr);
@@ -727,9 +727,9 @@ public:
     String filename_database(String filename);
     String errmsg(Ref<Sqlite3Handle> db);
     String filename_wal(String filename);
-    intptr_t database_file_object(String filename);
-    intptr_t create_filename(String database, String journal, String wal, int param_count, Array params);
-    void free_filename(intptr_t filename_ptr);
+    int64_t database_file_object(String filename);
+    int64_t create_filename(String database, String journal, String wal, int param_count, Array params);
+    void free_filename(int64_t filename_ptr);
     String filename_journal(String filename);
     int extended_errcode(Ref<Sqlite3Handle> db);
     int errcode(Ref<Sqlite3Handle> db);
@@ -753,7 +753,7 @@ public:
     double value_double(Ref<Sqlite3ValueHandle> value);
     int value_int(Ref<Sqlite3ValueHandle> value);
     int64_t value_int64(Ref<Sqlite3ValueHandle> value);
-    intptr_t value_pointer(Ref<Sqlite3ValueHandle> value, String type_name);
+    int64_t value_pointer(Ref<Sqlite3ValueHandle> value, String type_name);
     int value_bytes(Ref<Sqlite3ValueHandle> value);
     void value_free(Ref<Sqlite3ValueHandle> value);
     void set_auxdata(Ref<Sqlite3ContextHandle> context, int n, uint64_t data);
