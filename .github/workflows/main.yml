@@ -273,7 +273,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          files=$(find vcpkg/buildtrees/gdext -name "*.so" -o -name "*.dll" -o -name "*.dylib")
+          files=$(find vcpkg/buildtrees/gdext -name "*.so" -o -name "*.dll" -o -name "*.pdb" -o -name "*.dylib")
           if [ -z "$files" ]; then
             echo "No library files found"
             exit 1
