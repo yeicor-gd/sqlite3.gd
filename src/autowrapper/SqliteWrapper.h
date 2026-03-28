@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sqlite3.h"
+#include <sqlite3.h>
 #include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/core/class_db.hpp>

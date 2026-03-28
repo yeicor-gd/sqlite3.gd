@@ -4681,12 +4681,20 @@ Ref<Sqlite3VfsHandle> SqliteWrapper::vfs_find(String vfs_name) {
 
 bool SqliteWrapper::mutex_held(Ref<Sqlite3MutexHandle> mutex) {
     ERR_FAIL_COND_V(mutex.is_null() || !mutex->is_valid(), true);
+#ifdef SQLITE_DEBUG
     return bool(sqlite3_mutex_held(mutex->handle));
+#else
+    return true;
+#endif
 }
 
 bool SqliteWrapper::mutex_notheld(Ref<Sqlite3MutexHandle> mutex) {
     ERR_FAIL_COND_V(mutex.is_null() || !mutex->is_valid(), true);
+#ifdef SQLITE_DEBUG
     return bool(sqlite3_mutex_notheld(mutex->handle));
+#else
+    return true;
+#endif
 }
 
 int SqliteWrapper::mutex_fast(void) {
@@ -5618,11 +5626,12 @@ int SqliteWrapper::changeset_apply(Ref<Sqlite3Handle> db, PackedByteArray change
     Callable filter_ctx = filter_callback.is_valid() ? filter_callback : Callable();
     Callable conflict_ctx = conflict_callback;
 
+    int (*filter_fn)(void*, const char*) = filter_callback.is_valid() ? +filter_tramp : nullptr;
     return sqlite3changeset_apply(
         db->handle,
         changeset.size(),
         const_cast<void*>(static_cast<const void*>(changeset.ptr())),
-        filter_callback.is_valid() ? filter_tramp : nullptr,
+        filter_fn,
         conflict_tramp,
         filter_callback.is_valid() ? &filter_ctx : &conflict_ctx
     );
@@ -5677,11 +5686,12 @@ int SqliteWrapper::changeset_apply_v2(Ref<Sqlite3Handle> db, PackedByteArray cha
     void *rebase_ptr = nullptr;
     int rebase_size = 0;
 
+    int (*filter_fn)(void*, const char*) = filter_callback.is_valid() ? +filter_tramp : nullptr;
     int result = sqlite3changeset_apply_v2(
         db->handle,
         changeset.size(),
         const_cast<void*>(static_cast<const void*>(changeset.ptr())),
-        filter_callback.is_valid() ? filter_tramp : nullptr,
+        filter_fn,
         conflict_tramp,
         filter_callback.is_valid() ? &filter_ctx : &conflict_ctx,
         &rebase_ptr,
@@ -5759,11 +5769,12 @@ int SqliteWrapper::changeset_apply_v3(Ref<Sqlite3Handle> db, PackedByteArray cha
     void *rebase_ptr = nullptr;
     int rebase_size = 0;
 
+    int (*filter_fn)(void*, sqlite3_changeset_iter*) = filter_callback.is_valid() ? +filter_tramp : nullptr;
     int result = sqlite3changeset_apply_v3(
         db->handle,
         changeset.size(),
         const_cast<void*>(static_cast<const void*>(changeset.ptr())),
-        filter_callback.is_valid() ? filter_tramp : nullptr,
+        filter_fn,
         conflict_tramp,
         filter_callback.is_valid() ? &filter_ctx : &conflict_ctx,
         &rebase_ptr,
@@ -5946,11 +5957,12 @@ int SqliteWrapper::changeset_apply_stream(Ref<Sqlite3Handle> db, PackedByteArray
     Callable filter_ctx = filter_callback.is_valid() ? filter_callback : Callable();
     Callable conflict_ctx = conflict_callback;
 
+    int (*filter_fn)(void*, const char*) = filter_callback.is_valid() ? +filter_tramp : nullptr;
     return sqlite3changeset_apply_strm(
         db->handle,
         input_tramp,
         &changeset,
-        filter_callback.is_valid() ? filter_tramp : nullptr,
+        filter_fn,
         conflict_tramp,
         filter_callback.is_valid() ? &filter_ctx : &conflict_ctx
     );
@@ -6025,11 +6037,12 @@ int SqliteWrapper::changeset_apply_v2_stream(Ref<Sqlite3Handle> db, PackedByteAr
     void *rebase_ptr = nullptr;
     int rebase_size = 0;
 
+    int (*filter_fn)(void*, const char*) = filter_callback.is_valid() ? +filter_tramp : nullptr;
     int result = sqlite3changeset_apply_v2_strm(
         db->handle,
         input_tramp,
         &changeset,
-        filter_callback.is_valid() ? filter_tramp : nullptr,
+        filter_fn,
         conflict_tramp,
         filter_callback.is_valid() ? &filter_ctx : &conflict_ctx,
         &rebase_ptr,
@@ -6127,11 +6140,12 @@ int SqliteWrapper::changeset_apply_v3_stream(Ref<Sqlite3Handle> db, PackedByteAr
     void *rebase_ptr = nullptr;
     int rebase_size = 0;
 
+    int (*filter_fn)(void*, sqlite3_changeset_iter*) = filter_callback.is_valid() ? +filter_tramp : nullptr;
     int result = sqlite3changeset_apply_v3_strm(
         db->handle,
         input_tramp,
         &changeset,
-        filter_callback.is_valid() ? filter_tramp : nullptr,
+        filter_fn,
         conflict_tramp,
         filter_callback.is_valid() ? &filter_ctx : &conflict_ctx,
         &rebase_ptr,
