@@ -1541,33 +1541,41 @@ int SqliteWrapper::trace_v2(Ref<Sqlite3Handle> db, unsigned int mask, Callable c
 }
 
 String SqliteWrapper::uri_parameter(String filename, String param) {
-    const char* filename_c = filename.utf8().get_data();
-    const char* param_c = param.utf8().get_data();
+    CharString filename_utf8 = filename.utf8();
+    const char* filename_c = filename_utf8.get_data();
+    CharString param_utf8 = param.utf8();
+    const char* param_c = param_utf8.get_data();
     const char* result = sqlite3_uri_parameter(filename_c, param_c);
     return result ? String::utf8(result) : String();
 }
 
 bool SqliteWrapper::uri_boolean(String filename, String param, bool default_value) {
-    const char* filename_c = filename.utf8().get_data();
-    const char* param_c = param.utf8().get_data();
+    CharString filename_utf8 = filename.utf8();
+    const char* filename_c = filename_utf8.get_data();
+    CharString param_utf8 = param.utf8();
+    const char* param_c = param_utf8.get_data();
     int result = sqlite3_uri_boolean(filename_c, param_c, default_value ? 1 : 0);
     return result != 0;
 }
 
 int64_t SqliteWrapper::uri_int64(String filename, String param, int64_t default_value) {
-    const char* filename_c = filename.utf8().get_data();
-    const char* param_c = param.utf8().get_data();
+    CharString filename_utf8 = filename.utf8();
+    const char* filename_c = filename_utf8.get_data();
+    CharString param_utf8 = param.utf8();
+    const char* param_c = param_utf8.get_data();
     return sqlite3_uri_int64(filename_c, param_c, default_value);
 }
 
 String SqliteWrapper::uri_key(String filename, int index) {
-    const char* filename_c = filename.utf8().get_data();
+    CharString filename_utf8 = filename.utf8();
+    const char* filename_c = filename_utf8.get_data();
     const char* result = sqlite3_uri_key(filename_c, index);
     return result ? String::utf8(result) : String();
 }
 
 String SqliteWrapper::filename_database(String filename) {
-    const char* filename_c = filename.utf8().get_data();
+    CharString filename_utf8 = filename.utf8();
+    const char* filename_c = filename_utf8.get_data();
     const char* result = sqlite3_filename_database(filename_c);
     return result ? String::utf8(result) : String();
 }
@@ -1579,29 +1587,40 @@ String SqliteWrapper::errmsg(Ref<Sqlite3Handle> db) {
 }
 
 String SqliteWrapper::filename_wal(String filename) {
-    const char* filename_c = filename.utf8().get_data();
+    CharString filename_utf8 = filename.utf8();
+    const char* filename_c = filename_utf8.get_data();
     const char* result = sqlite3_filename_wal(filename_c);
     return result ? String::utf8(result) : String();
 }
 
 int64_t SqliteWrapper::database_file_object(String filename) {
-    const char* filename_c = filename.utf8().get_data();
+    CharString filename_utf8 = filename.utf8();
+    const char* filename_c = filename_utf8.get_data();
     sqlite3_file* result = sqlite3_database_file_object(filename_c);
     return static_cast<int64_t>(reinterpret_cast<intptr_t>(result));
 }
 
 int64_t SqliteWrapper::create_filename(String database, String journal, String wal, int param_count, Array params) {
-    const char* db_c = database.utf8().get_data();
-    const char* jnl_c = journal.utf8().get_data();
-    const char* wal_c = wal.utf8().get_data();
+    CharString database_utf8 = database.utf8();
+    const char* db_c = database_utf8.get_data();
+    CharString journal_utf8 = journal.utf8();
+    const char* jnl_c = journal_utf8.get_data();
+    CharString wal_utf8 = wal.utf8();
+    const char* wal_c = wal_utf8.get_data();
     ERR_FAIL_COND_V(param_count < 0, 0);
     ERR_FAIL_COND_V(params.size() != param_count * 2, 0);
+    Vector<CharString> kept_strings;
+    kept_strings.resize(param_count * 2);
     const char** param_array = (const char**)malloc(param_count * 2 * sizeof(char*));
     ERR_FAIL_COND_V(!param_array, 0);
     for (int i = 0; i < param_count * 2; i++) {
         String s = params[i];
-        ERR_FAIL_COND_V(s.is_empty(), 0);
-        param_array[i] = s.utf8().get_data();
+        if (s.is_empty()) {
+            ::free(param_array);
+            ERR_FAIL_V(0);
+        }
+        kept_strings.write[i] = s.utf8();
+        param_array[i] = kept_strings[i].get_data();
     }
     const char* result = sqlite3_create_filename(db_c, jnl_c, wal_c, param_count, param_array);
     ::free(param_array);
@@ -1614,7 +1633,8 @@ void SqliteWrapper::free_filename(int64_t filename_ptr) {
 }
 
 String SqliteWrapper::filename_journal(String filename) {
-    const char* filename_c = filename.utf8().get_data();
+    CharString filename_utf8 = filename.utf8();
+    const char* filename_c = filename_utf8.get_data();
     const char* result = sqlite3_filename_journal(filename_c);
     return result ? String::utf8(result) : String();
 }
@@ -1981,7 +2001,8 @@ int SqliteWrapper::win32_set_directory(uint32_t type, String value) {
 }
 
 int SqliteWrapper::win32_set_directory8(uint32_t type, String value) {
-    const char *value_ptr = value.length() > 0 ? value.utf8().get_data() : nullptr;
+    CharString value_utf8 = value.utf8();
+    const char * value_ptr = value.length() > 0 ? value_utf8.get_data() : nullptr;
     return sqlite3_win32_set_directory8(type, value_ptr);
 }
 
@@ -3370,7 +3391,8 @@ void SqliteWrapper::progress_handler(Ref<Sqlite3Handle> db, int n, Callable call
 
 int SqliteWrapper::open(String filename, Ref<Sqlite3Handle> out_db) {
     ERR_FAIL_COND_V(out_db.is_null(), SQLITE_ERROR);
-    const char* filename_c = filename.utf8().get_data();
+    CharString filename_utf8 = filename.utf8();
+    const char* filename_c = filename_utf8.get_data();
     return sqlite3_open(filename_c, &out_db->handle);
 }
 
@@ -3382,8 +3404,10 @@ int SqliteWrapper::open16(String filename, Ref<Sqlite3Handle> out_db) {
 
 int SqliteWrapper::open_v2(String filename, Ref<Sqlite3Handle> out_db, int flags, String vfs) {
     ERR_FAIL_COND_V(out_db.is_null(), SQLITE_ERROR);
-    const char* filename_c = filename.utf8().get_data();
-    const char* vfs_c = vfs.is_empty() ? nullptr : vfs.utf8().get_data();
+    CharString filename_utf8 = filename.utf8();
+    const char* filename_c = filename_utf8.get_data();
+    CharString vfs_utf8 = vfs.utf8();
+    const char* vfs_c = vfs.is_empty() ? nullptr : vfs_utf8.get_data();
     return sqlite3_open_v2(filename_c, &out_db->handle, flags, vfs_c);
 }
 
@@ -3402,7 +3426,8 @@ int SqliteWrapper::error_offset(Ref<Sqlite3Handle> db) {
 
 int SqliteWrapper::set_errmsg(Ref<Sqlite3Handle> db, int errcode, String errmsg) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_MISUSE);
-    const char* errmsg_c = errmsg.utf8().get_data();
+    CharString errmsg_utf8 = errmsg.utf8();
+    const char* errmsg_c = errmsg_utf8.get_data();
     return sqlite3_set_errmsg(db->handle, errcode, errmsg_c);
 }
 
@@ -3481,7 +3506,8 @@ int SqliteWrapper::prepare_from_ddl_flag(void) {
 int SqliteWrapper::prepare(Ref<Sqlite3Handle> db, String sql, int max_bytes, Ref<Sqlite3StmtHandle> out_stmt, String out_tail) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);
     ERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);
-    const char* sql_c = sql.utf8().get_data();
+    CharString sql_utf8 = sql.utf8();
+    const char* sql_c = sql_utf8.get_data();
     int len = max_bytes < 0 ? -1 : max_bytes;
     const char* tail_c = nullptr;
     sqlite3_stmt* stmt = nullptr;
@@ -3499,7 +3525,8 @@ int SqliteWrapper::prepare(Ref<Sqlite3Handle> db, String sql, int max_bytes, Ref
 int SqliteWrapper::prepare_v2(Ref<Sqlite3Handle> db, String sql, int max_bytes, Ref<Sqlite3StmtHandle> out_stmt, String out_tail) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);
     ERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);
-    const char* sql_c = sql.utf8().get_data();
+    CharString sql_utf8 = sql.utf8();
+    const char* sql_c = sql_utf8.get_data();
     int len = max_bytes < 0 ? -1 : max_bytes;
     const char* tail_c = nullptr;
     sqlite3_stmt* stmt = nullptr;
@@ -3517,7 +3544,8 @@ int SqliteWrapper::prepare_v2(Ref<Sqlite3Handle> db, String sql, int max_bytes, 
 int SqliteWrapper::prepare_v3(Ref<Sqlite3Handle> db, String sql, int max_bytes, unsigned int prep_flags, Ref<Sqlite3StmtHandle> out_stmt, String out_tail) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);
     ERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);
-    const char* sql_c = sql.utf8().get_data();
+    CharString sql_utf8 = sql.utf8();
+    const char* sql_c = sql_utf8.get_data();
     int len = max_bytes < 0 ? -1 : max_bytes;
     const char* tail_c = nullptr;
     sqlite3_stmt* stmt = nullptr;
@@ -4417,7 +4445,8 @@ String SqliteWrapper::db_name(Ref<Sqlite3Handle> db, int n) {
 
 String SqliteWrapper::db_filename(Ref<Sqlite3Handle> db, String db_name) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), String());
-    const char *filename = sqlite3_db_filename(db->handle, db_name.length() > 0 ? db_name.utf8().get_data() : nullptr);
+    CharString db_name_utf8 = db_name.utf8();
+    const char *filename = sqlite3_db_filename(db->handle, db_name.length() > 0 ? db_name_utf8.get_data() : nullptr);
     return filename != nullptr ? String::utf8(filename) : String();
 }
 
@@ -4767,7 +4796,8 @@ int SqliteWrapper::mutex_static_master(void) {
 
 int SqliteWrapper::file_control(Ref<Sqlite3Handle> db, String db_name, int op, int64_t arg) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);
-    const char *db_name_cstr = db_name.is_empty() ? "main" : db_name.utf8().get_data();
+    CharString db_name_utf8 = db_name.utf8();
+    const char * db_name_cstr = db_name.is_empty() ? "main" : db_name_utf8.get_data();
     return sqlite3_file_control(db->handle, db_name_cstr, op, reinterpret_cast<void*>(arg));
 }
 
@@ -4893,7 +4923,8 @@ int SqliteWrapper::wal_autocheckpoint(Ref<Sqlite3Handle> db, int threshold) {
 
 int SqliteWrapper::wal_checkpoint(Ref<Sqlite3Handle> db, String database_name) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_MISUSE);
-    const char* db_name = database_name.utf8().get_data();
+    CharString database_name_utf8 = database_name.utf8();
+    const char* db_name = database_name_utf8.get_data();
     return sqlite3_wal_checkpoint(db->handle, db_name);
 }
 
@@ -4903,7 +4934,8 @@ Array SqliteWrapper::wal_checkpoint_v2(Ref<Sqlite3Handle> db, String database_na
     int log_size = 0;
     int ckpt_frames = 0;
 
-    const char* db_name = database_name.utf8().get_data();
+    CharString database_name_utf8 = database_name.utf8();
+    const char* db_name = database_name_utf8.get_data();
     int result = sqlite3_wal_checkpoint_v2(db->handle, db_name, mode, &log_size, &ckpt_frames);
 
     Array result_array;
@@ -5298,7 +5330,8 @@ int SqliteWrapper::session_indirect(Ref<Sqlite3SessionHandle> session, int b_ind
 
 int SqliteWrapper::session_attach(Ref<Sqlite3SessionHandle> session, String z_tab) {
     ERR_FAIL_COND_V(session.is_null() || !session->is_valid(), -1);
-    const char *tab = z_tab.is_empty() ? nullptr : z_tab.utf8().get_data();
+    CharString z_tab_utf8 = z_tab.utf8();
+    const char * tab = z_tab.is_empty() ? nullptr : z_tab_utf8.get_data();
     return sqlite3session_attach(session->handle, tab);
 }
 

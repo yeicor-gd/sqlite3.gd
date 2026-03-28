@@ -2505,7 +2505,7 @@
             "name": "out_db"
           }
         ],
-        "body": "ERR_FAIL_COND_V(out_db.is_null(), SQLITE_ERROR);\nconst char* filename_c = filename.utf8().get_data();\nreturn sqlite3_open(filename_c, &out_db->handle);",
+        "body": "ERR_FAIL_COND_V(out_db.is_null(), SQLITE_ERROR);\nCharString filename_utf8 = filename.utf8();\n\nconst char* filename_c = filename_utf8.get_data();\nreturn sqlite3_open(filename_c, &out_db->handle);",
         "doc": "Opens an SQLite database connection. The `filename` can be a file path, \":memory:\" for in-memory database, or empty string for temporary on-disk database. On success, `out_db` contains a valid handle and returns SQLITE_OK; otherwise, returns an error code and `out_db` remains invalid."
       }
     ]
@@ -2555,7 +2555,7 @@
             "name": "vfs"
           }
         ],
-        "body": "ERR_FAIL_COND_V(out_db.is_null(), SQLITE_ERROR);\nconst char* filename_c = filename.utf8().get_data();\nconst char* vfs_c = vfs.is_empty() ? nullptr : vfs.utf8().get_data();\nreturn sqlite3_open_v2(filename_c, &out_db->handle, flags, vfs_c);",
+        "body": "ERR_FAIL_COND_V(out_db.is_null(), SQLITE_ERROR);\nCharString filename_utf8 = filename.utf8();\n\nconst char* filename_c = filename_utf8.get_data();\nCharString vfs_utf8 = vfs.utf8();\n\nconst char* vfs_c = vfs.is_empty() ? nullptr : vfs_utf8.get_data();\nreturn sqlite3_open_v2(filename_c, &out_db->handle, flags, vfs_c);",
         "doc": "Opens an SQLite database connection with additional control via flags and VFS. The `flags` parameter specifies access mode and options (e.g., SQLITE_OPEN_READONLY). The `vfs` parameter specifies the VFS module name (empty string uses default)."
       }
     ]
@@ -2576,7 +2576,7 @@
             "name": "param"
           }
         ],
-        "body": "const char* filename_c = filename.utf8().get_data();\nconst char* param_c = param.utf8().get_data();\nconst char* result = sqlite3_uri_parameter(filename_c, param_c);\nreturn result ? String::utf8(result) : String();",
+        "body": "CharString filename_utf8 = filename.utf8();\n"const char* filename_c = filename_utf8.get_data();\nCharString param_utf8 = param.utf8();\n\nconst char* param_c = param_utf8.get_data();\nconst char* result = sqlite3_uri_parameter(filename_c, param_c);\nreturn result ? String::utf8(result) : String();",
         "doc": "Returns the value of a URI query parameter from a database filename. If the parameter is not found, returns an empty String. If the parameter exists but has no value, returns an empty String (not null). The filename must be a valid SQLite filename (e.g., obtained from SQLite core)."
       }
     ]
@@ -2601,7 +2601,7 @@
             "name": "default_value"
           }
         ],
-        "body": "const char* filename_c = filename.utf8().get_data();\nconst char* param_c = param.utf8().get_data();\nint result = sqlite3_uri_boolean(filename_c, param_c, default_value ? 1 : 0);\nreturn result != 0;",
+        "body": "CharString filename_utf8 = filename.utf8();\n"const char* filename_c = filename_utf8.get_data();\nCharString param_utf8 = param.utf8();\n\nconst char* param_c = param_utf8.get_data();\nint result = sqlite3_uri_boolean(filename_c, param_c, default_value ? 1 : 0);\nreturn result != 0;",
         "doc": "Returns the boolean interpretation of a URI query parameter. Returns true if the parameter value is 'yes', 'true', 'on' (case-insensitive) or starts with a non-zero digit; false if 'no', 'false', 'off' or starts with '0'; otherwise returns default_value. If the parameter is missing, returns default_value."
       }
     ]
@@ -2626,7 +2626,7 @@
             "name": "default_value"
           }
         ],
-        "body": "const char* filename_c = filename.utf8().get_data();\nconst char* param_c = param.utf8().get_data();\nreturn sqlite3_uri_int64(filename_c, param_c, default_value);",
+        "body": "CharString filename_utf8 = filename.utf8();\n"const char* filename_c = filename_utf8.get_data();\nCharString param_utf8 = param.utf8();\n\nconst char* param_c = param_utf8.get_data();\nreturn sqlite3_uri_int64(filename_c, param_c, default_value);",
         "doc": "Returns the 64-bit integer value of a URI query parameter. If the parameter is missing or not a valid integer, returns default_value."
       }
     ]
@@ -2647,7 +2647,7 @@
             "name": "index"
           }
         ],
-        "body": "const char* filename_c = filename.utf8().get_data();\nconst char* result = sqlite3_uri_key(filename_c, index);\nreturn result ? String::utf8(result) : String();",
+        "body": "CharString filename_utf8 = filename.utf8();\n"const char* filename_c = filename_utf8.get_data();\nconst char* result = sqlite3_uri_key(filename_c, index);\nreturn result ? String::utf8(result) : String();",
         "doc": "Returns the name (key) of the N-th URI query parameter (zero-based index). Returns an empty String if the index is out of range (negative or beyond the number of parameters)."
       }
     ]
@@ -2664,7 +2664,7 @@
             "name": "filename"
           }
         ],
-        "body": "const char* filename_c = filename.utf8().get_data();\nconst char* result = sqlite3_filename_database(filename_c);\nreturn result ? String::utf8(result) : String();",
+        "body": "CharString filename_utf8 = filename.utf8();\n"const char* filename_c = filename_utf8.get_data();\nconst char* result = sqlite3_filename_database(filename_c);\nreturn result ? String::utf8(result) : String();",
         "doc": "Returns the database filename corresponding to a given SQLite filename (database, journal, or WAL). The input must be a filename obtained from SQLite core (e.g., passed to VFS xOpen or from sqlite3_db_filename()). Behavior is undefined for invalid inputs."
       }
     ]
@@ -2681,7 +2681,7 @@
             "name": "filename"
           }
         ],
-        "body": "const char* filename_c = filename.utf8().get_data();\nconst char* result = sqlite3_filename_journal(filename_c);\nreturn result ? String::utf8(result) : String();",
+        "body": "CharString filename_utf8 = filename.utf8();\n"const char* filename_c = filename_utf8.get_data();\nconst char* result = sqlite3_filename_journal(filename_c);\nreturn result ? String::utf8(result) : String();",
         "doc": "Returns the rollback journal filename corresponding to a given SQLite filename (database, journal, or WAL). The input must be a filename obtained from SQLite core (e.g., passed to VFS xOpen or from sqlite3_db_filename()). Behavior is undefined for invalid inputs."
       }
     ]
@@ -2698,7 +2698,7 @@
             "name": "filename"
           }
         ],
-        "body": "const char* filename_c = filename.utf8().get_data();\nconst char* result = sqlite3_filename_wal(filename_c);\nreturn result ? String::utf8(result) : String();",
+        "body": "CharString filename_utf8 = filename.utf8();\n"const char* filename_c = filename_utf8.get_data();\nconst char* result = sqlite3_filename_wal(filename_c);\nreturn result ? String::utf8(result) : String();",
         "doc": "Returns the WAL (Write-Ahead Log) filename corresponding to a given SQLite filename (database, journal, or WAL). The input must be a filename obtained from SQLite core (e.g., passed to VFS xOpen or from sqlite3_db_filename()). Behavior is undefined for invalid inputs."
       }
     ]
@@ -2715,7 +2715,7 @@
             "name": "filename"
           }
         ],
-        "body": "const char* filename_c = filename.utf8().get_data();\nsqlite3_file* result = sqlite3_database_file_object(filename_c);\nreturn reinterpret_cast<intptr_t>(result);",
+        "body": "CharString filename_utf8 = filename.utf8();\n"const char* filename_c = filename_utf8.get_data();\nsqlite3_file* result = sqlite3_database_file_object(filename_c);\nreturn reinterpret_cast<intptr_t>(result);",
         "doc": "Returns the sqlite3_file* handle for the main database file corresponding to a journal/WAL filename. This is intended for use in custom VFS implementations only. The input must be a filename passed to xOpen with SQLITE_OPEN_MAIN_JOURNAL or SQLITE_OPEN_WAL flags. Behavior is undefined for invalid inputs."
       }
     ]
@@ -2748,7 +2748,7 @@
             "name": "params"
           }
         ],
-        "body": "const char* db_c = database.utf8().get_data();\nconst char* jnl_c = journal.utf8().get_data();\nconst char* wal_c = wal.utf8().get_data();\nERR_FAIL_COND_V(param_count < 0, 0);\nERR_FAIL_COND_V(params.size() != param_count * 2, 0);\nconst char** param_array = (const char**)malloc(param_count * 2 * sizeof(char*));\nERR_FAIL_COND_V(!param_array, 0);\nfor (int i = 0; i < param_count * 2; i++) {\n    String s = params[i];\n    ERR_FAIL_COND_V(s.is_empty(), 0);\n    param_array[i] = s.utf8().get_data();\n}\nconst char* result = sqlite3_create_filename(db_c, jnl_c, wal_c, param_count, param_array);\n::free(param_array);\nreturn reinterpret_cast<intptr_t>(result);",
+        "body": "CharString database_utf8 = database.utf8();\n"const char* db_c = database_utf8.get_data();\nCharString journal_utf8 = journal.utf8();\n\nconst char* jnl_c = journal_utf8.get_data();\nCharString wal_utf8 = wal.utf8();\n\nconst char* wal_c = wal_utf8.get_data();\nERR_FAIL_COND_V(param_count < 0, 0);\nERR_FAIL_COND_V(params.size() != param_count * 2, 0);\nVector<CharString> kept_strings;\nkept_strings.resize(param_count * 2);\nconst char** param_array = (const char**)malloc(param_count * 2 * sizeof(char*));\nERR_FAIL_COND_V(!param_array, 0);\nfor (int i = 0; i < param_count * 2; i++) {\n    String s = params[i];\n    if (s.is_empty()) {\n        ::free(param_array);\n        ERR_FAIL_V(0);\n    }\n    kept_strings.write[i] = s.utf8();\n    param_array[i] = kept_strings[i].get_data();\n}\nconst char* result = sqlite3_create_filename(db_c, jnl_c, wal_c, param_count, param_array);\n::free(param_array);\nreturn reinterpret_cast<intptr_t>(result);",
         "doc": "\u26a0\ufe0f VFS-only function. Creates a filename object from database, journal, WAL, and URI parameters. The returned pointer must be freed with sqlite3_free_filename(). The input strings must remain valid until then. In Godot, ensure strings are not temporary (e.g., use static strings or manage lifetime carefully)."
       }
     ]
@@ -2892,7 +2892,7 @@
             "name": "errmsg"
           }
         ],
-        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_MISUSE);\nconst char* errmsg_c = errmsg.utf8().get_data();\nreturn sqlite3_set_errmsg(db->handle, errcode, errmsg_c);",
+        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_MISUSE);\nCharString errmsg_utf8 = errmsg.utf8();\n\nconst char* errmsg_c = errmsg_utf8.get_data();\nreturn sqlite3_set_errmsg(db->handle, errcode, errmsg_c);",
         "doc": "Sets the error code and message for the database handle. If errmsg is empty, the default message for errcode is used. Returns SQLITE_OK on success, SQLITE_NOMEM on OOM, or SQLITE_MISUSE for invalid handle."
       }
     ]
@@ -3137,7 +3137,7 @@
             "name": "out_tail"
           }
         ],
-        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);\nERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);\nconst char* sql_c = sql.utf8().get_data();\nint len = max_bytes < 0 ? -1 : max_bytes;\nconst char* tail_c = nullptr;\nsqlite3_stmt* stmt = nullptr;\nint rc = sqlite3_prepare(db->handle, sql_c, len, &stmt, &tail_c);\nif (rc == SQLITE_OK) {\n    out_stmt->handle = stmt;\n    out_tail = tail_c ? String::utf8(tail_c) : String();\n} else {\n    out_stmt->handle = nullptr;\n    out_tail = String();\n}\nreturn rc;",
+        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);\nERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);\nCharString sql_utf8 = sql.utf8();\n\nconst char* sql_c = sql_utf8.get_data();\nint len = max_bytes < 0 ? -1 : max_bytes;\nconst char* tail_c = nullptr;\nsqlite3_stmt* stmt = nullptr;\nint rc = sqlite3_prepare(db->handle, sql_c, len, &stmt, &tail_c);\nif (rc == SQLITE_OK) {\n    out_stmt->handle = stmt;\n    out_tail = tail_c ? String::utf8(tail_c) : String();\n} else {\n    out_stmt->handle = nullptr;\n    out_tail = String();\n}\nreturn rc;",
         "doc": "Compiles the first SQL statement from the input string into a prepared statement. Use sqlite3_prepare_v2() for new code as it's recommended over this legacy interface. Returns SQLITE_OK on success with out_stmt containing the prepared statement handle. out_tail receives the unused portion of the SQL string."
       }
     ]
@@ -3170,7 +3170,7 @@
             "name": "out_tail"
           }
         ],
-        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);\nERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);\nconst char* sql_c = sql.utf8().get_data();\nint len = max_bytes < 0 ? -1 : max_bytes;\nconst char* tail_c = nullptr;\nsqlite3_stmt* stmt = nullptr;\nint rc = sqlite3_prepare_v2(db->handle, sql_c, len, &stmt, &tail_c);\nif (rc == SQLITE_OK) {\n    out_stmt->handle = stmt;\n    out_tail = tail_c ? String::utf8(tail_c) : String();\n} else {\n    out_stmt->handle = nullptr;\n    out_tail = String();\n}\nreturn rc;",
+        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);\nERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);\nCharString sql_utf8 = sql.utf8();\n\nconst char* sql_c = sql_utf8.get_data();\nint len = max_bytes < 0 ? -1 : max_bytes;\nconst char* tail_c = nullptr;\nsqlite3_stmt* stmt = nullptr;\nint rc = sqlite3_prepare_v2(db->handle, sql_c, len, &stmt, &tail_c);\nif (rc == SQLITE_OK) {\n    out_stmt->handle = stmt;\n    out_tail = tail_c ? String::utf8(tail_c) : String();\n} else {\n    out_stmt->handle = nullptr;\n    out_tail = String();\n}\nreturn rc;",
         "doc": "Compiles the first SQL statement from the input string into a prepared statement using the recommended sqlite3_prepare_v2() interface. Returns SQLITE_OK on success with out_stmt containing the prepared statement handle. out_tail receives the unused portion of the SQL string. This version automatically recompiles on schema changes and returns detailed error codes."
       }
     ]
@@ -3207,7 +3207,7 @@
             "name": "out_tail"
           }
         ],
-        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);\nERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);\nconst char* sql_c = sql.utf8().get_data();\nint len = max_bytes < 0 ? -1 : max_bytes;\nconst char* tail_c = nullptr;\nsqlite3_stmt* stmt = nullptr;\nint rc = sqlite3_prepare_v3(db->handle, sql_c, len, prep_flags, &stmt, &tail_c);\nif (rc == SQLITE_OK) {\n    out_stmt->handle = stmt;\n    out_tail = tail_c ? String::utf8(tail_c) : String();\n} else {\n    out_stmt->handle = nullptr;\n    out_tail = String();\n}\nreturn rc;",
+        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);\nERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);\nCharString sql_utf8 = sql.utf8();\n\nconst char* sql_c = sql_utf8.get_data();\nint len = max_bytes < 0 ? -1 : max_bytes;\nconst char* tail_c = nullptr;\nsqlite3_stmt* stmt = nullptr;\nint rc = sqlite3_prepare_v3(db->handle, sql_c, len, prep_flags, &stmt, &tail_c);\nif (rc == SQLITE_OK) {\n    out_stmt->handle = stmt;\n    out_tail = tail_c ? String::utf8(tail_c) : String();\n} else {\n    out_stmt->handle = nullptr;\n    out_tail = String();\n}\nreturn rc;",
         "doc": "Compiles the first SQL statement from the input string into a prepared statement using sqlite3_prepare_v3() with custom prepFlags. Returns SQLITE_OK on success with out_stmt containing the prepared statement handle. out_tail receives the unused portion of the SQL string."
       }
     ]
@@ -5944,7 +5944,7 @@
             "name": "value"
           }
         ],
-        "body": "const char *value_ptr = value.length() > 0 ? value.utf8().get_data() : nullptr;\nreturn sqlite3_win32_set_directory8(type, value_ptr);",
+        "body": "CharString value_utf8 = value.utf8();\n"const char * value_ptr = value.length() > 0 ? value_utf8.get_data() : nullptr;\nreturn sqlite3_win32_set_directory8(type, value_ptr);",
         "doc": "Sets the value associated with sqlite3_temp_directory or sqlite3_data_directory using a UTF-8 string. Pass an empty String to free the previous value. This function is Windows-specific."
       }
     ]
@@ -6061,7 +6061,7 @@
             "name": "db_name"
           }
         ],
-        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), String());\nconst char *filename = sqlite3_db_filename(db->handle, db_name.length() > 0 ? db_name.utf8().get_data() : nullptr);\nreturn filename != nullptr ? String::utf8(filename) : String();",
+        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), String());\nCharString db_name_utf8 = db_name.utf8();\nconst char *filename = sqlite3_db_filename(db->handle, db_name.length() > 0 ? db_name_utf8.get_data() : nullptr);\nreturn filename != nullptr ? String::utf8(filename) : String();",
         "doc": "Returns the absolute pathname of the filename associated with the specified database. Returns an empty String if the database doesn't exist or is temporary/in-memory."
       }
     ]
@@ -7371,7 +7371,7 @@
             "name": "arg"
           }
         ],
-        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);\nconst char *db_name_cstr = db_name.is_empty() ? \"main\" : db_name.utf8().get_data();\nreturn sqlite3_file_control(db->handle, db_name_cstr, op, reinterpret_cast<void*>(arg));",
+        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);\nCharString db_name_utf8 = db_name.utf8();\n\nconst char * db_name_cstr = db_name.is_empty() ? \"main\" : db_name_utf8.get_data();\nreturn sqlite3_file_control(db->handle, db_name_cstr, op, reinterpret_cast<void*>(arg));",
         "doc": "Performs a file control operation on a database file. The db_name parameter specifies the database (\"main\", \"temp\", or an attached database name); NULL or empty string means \"main\". The op parameter is the file control opcode, and arg is a pointer-sized value passed to the xFileControl method. Returns the result of the xFileControl method or SQLITE_ERROR if the database name is invalid."
       }
     ]
@@ -8758,7 +8758,7 @@
             "name": "database_name"
           }
         ],
-        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_MISUSE);\nconst char* db_name = database_name.utf8().get_data();\nreturn sqlite3_wal_checkpoint(db->handle, db_name);",
+        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_MISUSE);\nCharString database_name_utf8 = database_name.utf8();\n\nconst char* db_name = database_name_utf8.get_data();\nreturn sqlite3_wal_checkpoint(db->handle, db_name);",
         "doc": "Performs a checkpoint on a database in WAL mode. This transfers content from the write-ahead log (WAL) into the database file and resets the WAL. Equivalent to sqlite3_wal_checkpoint_v2() with passive mode. Returns an SQLite error code (SQLITE_OK on success)."
       }
     ]
@@ -8783,7 +8783,7 @@
             "name": "mode"
           }
         ],
-        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), Array());\n\nint log_size = 0;\nint ckpt_frames = 0;\n\nconst char* db_name = database_name.utf8().get_data();\nint result = sqlite3_wal_checkpoint_v2(db->handle, db_name, mode, &log_size, &ckpt_frames);\n\nArray result_array;\nresult_array.push_back(result);\nresult_array.push_back(log_size);\nresult_array.push_back(ckpt_frames);\n\nreturn result_array;",
+        "body": "ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), Array());\n\nint log_size = 0;\nint ckpt_frames = 0;\n\nCharString database_name_utf8 = database_name.utf8();\n\nconst char* db_name = database_name_utf8.get_data();\nint result = sqlite3_wal_checkpoint_v2(db->handle, db_name, mode, &log_size, &ckpt_frames);\n\nArray result_array;\nresult_array.push_back(result);\nresult_array.push_back(log_size);\nresult_array.push_back(ckpt_frames);\n\nreturn result_array;",
         "doc": "Runs a checkpoint operation on a database in WAL mode with specified mode. Returns an Array with [error_code, wal_log_size, total_ckpt_frames]. The mode parameter should be one of SQLITE_CHECKPOINT_PASSIVE, FULL, RESTART, TRUNCATE, or NOOP. For database_name, pass empty string or null to checkpoint all attached databases."
       }
     ]
@@ -9994,7 +9994,7 @@
             "name": "z_tab"
           }
         ],
-        "body": "ERR_FAIL_COND_V(session.is_null() || !session->is_valid(), -1);\nconst char *tab = z_tab.is_empty() ? nullptr : z_tab.utf8().get_data();\nreturn sqlite3session_attach(session->handle, tab);",
+        "body": "ERR_FAIL_COND_V(session.is_null() || !session->is_valid(), -1);\nCharString z_tab_utf8 = z_tab.utf8();\n\nconst char * tab = z_tab.is_empty() ? nullptr : z_tab_utf8.get_data();\nreturn sqlite3session_attach(session->handle, tab);",
         "doc": "Attach a table to the session object. If z_tab is empty or null, changes are recorded for all tables. Returns SQLITE_OK on success."
       }
     ]
