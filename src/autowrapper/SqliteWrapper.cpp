@@ -1441,8 +1441,8 @@ int SqliteWrapper::busy_handler(Ref<Sqlite3Handle> db, Callable on_busy) {
     return sqlite3_busy_handler(db->handle, trampoline, &ctx);
 }
 
-void SqliteWrapper::free_table(intptr_t result_ptr) {
-    char **result = reinterpret_cast<char**>(result_ptr);
+void SqliteWrapper::free_table(int64_t result_ptr) {
+    char **result = reinterpret_cast<char**>(static_cast<intptr_t>(result_ptr));
     sqlite3_free_table(result);
 }
 
@@ -1469,9 +1469,9 @@ int64_t SqliteWrapper::realloc64(int64_t ptr, uint64_t size) {
     return reinterpret_cast<int64_t>(new_ptr);
 }
 
-intptr_t SqliteWrapper::malloc(int size) {
+int64_t SqliteWrapper::malloc(int size) {
     void *ptr = sqlite3_malloc(size);
-    return reinterpret_cast<intptr_t>(ptr);
+    return static_cast<int64_t>(reinterpret_cast<intptr_t>(ptr));
 }
 
 int64_t SqliteWrapper::memory_used(void) {
@@ -1584,13 +1584,13 @@ String SqliteWrapper::filename_wal(String filename) {
     return result ? String::utf8(result) : String();
 }
 
-intptr_t SqliteWrapper::database_file_object(String filename) {
+int64_t SqliteWrapper::database_file_object(String filename) {
     const char* filename_c = filename.utf8().get_data();
     sqlite3_file* result = sqlite3_database_file_object(filename_c);
-    return reinterpret_cast<intptr_t>(result);
+    return static_cast<int64_t>(reinterpret_cast<intptr_t>(result));
 }
 
-intptr_t SqliteWrapper::create_filename(String database, String journal, String wal, int param_count, Array params) {
+int64_t SqliteWrapper::create_filename(String database, String journal, String wal, int param_count, Array params) {
     const char* db_c = database.utf8().get_data();
     const char* jnl_c = journal.utf8().get_data();
     const char* wal_c = wal.utf8().get_data();
@@ -1605,11 +1605,11 @@ intptr_t SqliteWrapper::create_filename(String database, String journal, String 
     }
     const char* result = sqlite3_create_filename(db_c, jnl_c, wal_c, param_count, param_array);
     ::free(param_array);
-    return reinterpret_cast<intptr_t>(result);
+    return static_cast<int64_t>(reinterpret_cast<intptr_t>(result));
 }
 
-void SqliteWrapper::free_filename(intptr_t filename_ptr) {
-    sqlite3_filename fn = reinterpret_cast<sqlite3_filename>(filename_ptr);
+void SqliteWrapper::free_filename(int64_t filename_ptr) {
+    sqlite3_filename fn = reinterpret_cast<sqlite3_filename>(static_cast<intptr_t>(filename_ptr));
     sqlite3_free_filename(fn);
 }
 
@@ -1791,10 +1791,10 @@ int64_t SqliteWrapper::value_int64(Ref<Sqlite3ValueHandle> value) {
     return sqlite3_value_int64(value->handle);
 }
 
-intptr_t SqliteWrapper::value_pointer(Ref<Sqlite3ValueHandle> value, String type_name) {
+int64_t SqliteWrapper::value_pointer(Ref<Sqlite3ValueHandle> value, String type_name) {
     ERR_FAIL_COND_V(value.is_null() || !value->is_valid(), 0);
     void* ptr = sqlite3_value_pointer(value->handle, type_name.utf8().get_data());
-    return reinterpret_cast<intptr_t>(ptr);
+    return static_cast<int64_t>(reinterpret_cast<intptr_t>(ptr));
 }
 
 int SqliteWrapper::value_bytes(Ref<Sqlite3ValueHandle> value) {
