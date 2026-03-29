@@ -10,7 +10,8 @@ on:
     branches:
       - main
   merge_group:
-
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Avoid sccache-action@v0.0.9 warning
 jobs:
   read-versions:
     runs-on: ubuntu-24.04
