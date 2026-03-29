@@ -65,6 +65,8 @@ SQLite3Database::~SQLite3Database() {
 
 Ref<SQLite3Database> SQLite3Database::open(const String& filename, int flags, const String& vfs) {
     sqlite3* db;
+    (void)(flags);
+    (void)(vfs);
     int rc = sqlite3_open(filename.utf8().get_data(), &db);
     if (rc != SQLITE_OK) {
         UtilityFunctions::printerr("Failed to open database: ", String(sqlite3_errmsg(db)));
@@ -261,6 +263,7 @@ Ref<SQLite3Backup> SQLite3Database::backup_init(const String& zDestName, Ref<SQL
 
 int SQLite3Database::db_config(int op, Variant args) {
     // Simplified, varargs not handled
+    (void)(args);
     return _db ? sqlite3_db_config(_db, op) : SQLITE_MISUSE;
 }
 
@@ -330,11 +333,13 @@ int SQLite3Database::load_extension(const String& zFile, const String& zProc) {
 }
 
 int SQLite3Database::auto_extension(Callable xEntryPoint) {
+    (void)(xEntryPoint);
     // Simplified
     return SQLITE_MISUSE;
 }
 
 int SQLite3Database::cancel_auto_extension(Callable xEntryPoint) {
+    (void)(xEntryPoint);
     // Simplified
     return SQLITE_MISUSE;
 }
@@ -344,6 +349,8 @@ void SQLite3Database::reset_auto_extension() {
 }
 
 int SQLite3Database::create_module(const String& zName, Variant pModule) {
+    (void)(zName);
+    (void)(pModule);
     // Simplified
     return SQLITE_MISUSE;
 }
@@ -369,6 +376,7 @@ Ref<SQLite3Blob> SQLite3Database::blob_open(const String& zDb, const String& zTa
 
 int SQLite3Database::file_control(const String& zDbName, int op, Variant pArg) {
     // Simplified
+    (void)(pArg);
     return _db ? sqlite3_file_control(_db, zDbName.utf8().get_data(), op, nullptr) : SQLITE_MISUSE;
 }
 
@@ -411,11 +419,17 @@ int SQLite3Database::deserialize(const String& zSchema, const PackedByteArray& p
 }
 
 int SQLite3Database::rtree_geometry_callback(const String& zGeom, Callable xGeom, Variant pContext) {
+    (void)(zGeom);
+    (void)(xGeom);
+    (void)(pContext);
     // Simplified
     return SQLITE_MISUSE;
 }
 
 int SQLite3Database::rtree_query_callback(const String& zQueryFunc, Callable xQueryFunc, Variant pContext) {
+    (void)(zQueryFunc);
+    (void)(xQueryFunc);
+    (void)(pContext);
     // Simplified
     return SQLITE_MISUSE;
 }

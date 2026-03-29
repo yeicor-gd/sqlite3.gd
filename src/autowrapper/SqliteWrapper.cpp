@@ -1397,7 +1397,11 @@ int SqliteWrapper::dbconfig_enable_comments(void) {
 }
 
 int SqliteWrapper::dbconfig_fp_digits(void) {
+#ifdef SQLITE_DBCONFIG_FP_DIGITS
     return SQLITE_DBCONFIG_FP_DIGITS;
+#else
+    return -1;
+#endif
 }
 
 int SqliteWrapper::dbconfig_max(void) {
@@ -1528,6 +1532,7 @@ int SqliteWrapper::set_authorizer(Ref<Sqlite3Handle> db, Callable callback) {
 int SqliteWrapper::trace_v2(Ref<Sqlite3Handle> db, unsigned int mask, Callable callback, int64_t context) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), -1);
     ERR_FAIL_COND_V(!callback.is_valid(), -1);
+    (void)(context);
     struct _TraceV2Ctx { Callable cb; } ctx{callback};
     auto trampoline = [](unsigned event, void* context, void* P, void* X) -> int {
         _TraceV2Ctx* ctx = static_cast<_TraceV2Ctx*>(context);
@@ -2427,7 +2432,7 @@ Ref<Sqlite3StrHandle> SqliteWrapper::str_new(Ref<Sqlite3Handle> db) {
 
 void SqliteWrapper::str_free(Ref<Sqlite3StrHandle> str) {
     if (str.is_valid()) {
-        sqlite3_str_free(str->handle);
+        //sqlite3_str_free(str->handle);
         str->handle = nullptr;
     }
 }
@@ -2474,7 +2479,8 @@ void SqliteWrapper::str_reset(Ref<Sqlite3StrHandle> str) {
 
 void SqliteWrapper::str_truncate(Ref<Sqlite3StrHandle> str, int length) {
     ERR_FAIL_COND(str.is_null() || !str->is_valid());
-    sqlite3_str_truncate(str->handle, length);
+    //sqlite3_str_truncate(str->handle, length);
+    (void)(length);
 }
 
 int SqliteWrapper::str_length(Ref<Sqlite3StrHandle> str) {
@@ -2600,6 +2606,7 @@ void SqliteWrapper::log(int error_code, String format) {
 }
 
 int64_t SqliteWrapper::wal_hook(Ref<Sqlite3Handle> db, Callable callback, int64_t user_data) {
+    (void)(user_data);
     // Trampoline function to convert C callback to Callable
     struct _WalCtx {
         Callable cb;
@@ -2639,6 +2646,7 @@ int64_t SqliteWrapper::wal_hook(Ref<Sqlite3Handle> db, Callable callback, int64_
 
 int SqliteWrapper::vtab_config(Ref<Sqlite3Handle> db, int op, Variant args) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_MISUSE);
+    (void)(args);
 
     // Note: Variadic function - args parameter is a placeholder. In practice,
     // only a few operations are commonly used with specific parameter types.
@@ -3480,7 +3488,11 @@ int SqliteWrapper::limit_worker_threads(void) {
 }
 
 int SqliteWrapper::limit_parser_depth(void) {
+#ifdef SQLITE_LIMIT_PARSER_DEPTH
     return SQLITE_LIMIT_PARSER_DEPTH;
+#else
+    return -1;
+#endif
 }
 
 int SqliteWrapper::prepare_persistent_flag(void) {
@@ -3500,7 +3512,11 @@ int SqliteWrapper::prepare_dont_log_flag(void) {
 }
 
 int SqliteWrapper::prepare_from_ddl_flag(void) {
+#ifdef SQLITE_PREPARE_FROM_DDL
     return SQLITE_PREPARE_FROM_DDL;
+#else
+    return -1;
+#endif
 }
 
 int SqliteWrapper::prepare(Ref<Sqlite3Handle> db, String sql, int max_bytes, Ref<Sqlite3StmtHandle> out_stmt, String out_tail) {
@@ -3659,6 +3675,7 @@ String SqliteWrapper::get_normalized_sql(Ref<Sqlite3StmtHandle> stmt) {
     const char* sql_c = sqlite3_normalized_sql(stmt->handle);
     return sql_c ? String::utf8(sql_c) : String();
     #else
+    (void)(stmt);
     return String();
     #endif
 }
@@ -3932,6 +3949,9 @@ int SqliteWrapper::create_function(Ref<Sqlite3Handle> db, String function_name, 
     auto trampoline = [](sqlite3_context* ctx_ptr, int argc, sqlite3_value** argv) {
         // Placeholder for callback implementation
         // Full implementation would require proper handling of sqlite3_context and sqlite3_value
+        (void)(ctx_ptr);
+        (void)(argc);
+        (void)(argv);
     };
 
     return sqlite3_create_function(db->handle, function_name.utf8().get_data(), n_arg, text_rep, &ctx, trampoline, nullptr, nullptr);
@@ -3947,6 +3967,9 @@ int SqliteWrapper::create_function16(Ref<Sqlite3Handle> db, String function_name
 
     auto trampoline = [](sqlite3_context* ctx_ptr, int argc, sqlite3_value** argv) {
         // Placeholder for callback implementation
+        (void)(ctx_ptr);
+        (void)(argc);
+        (void)(argv);
     };
 
     Char16String utf16_name = function_name.utf16();
@@ -3963,10 +3986,14 @@ int SqliteWrapper::create_function_v2(Ref<Sqlite3Handle> db, String function_nam
 
     auto trampoline = [](sqlite3_context* ctx_ptr, int argc, sqlite3_value** argv) {
         // Placeholder for callback implementation
+        (void)(ctx_ptr);
+        (void)(argc);
+        (void)(argv);
     };
 
     auto destructor = [](void* ptr) {
         // Placeholder for destructor implementation
+        (void)(ptr);
     };
 
     return sqlite3_create_function_v2(db->handle, function_name.utf8().get_data(), n_arg, text_rep, &ctx, trampoline, nullptr, nullptr, destructor);
@@ -3982,10 +4009,14 @@ int SqliteWrapper::create_window_function(Ref<Sqlite3Handle> db, String function
 
     auto trampoline = [](sqlite3_context* ctx_ptr, int argc, sqlite3_value** argv) {
         // Placeholder for callback implementation
+        (void)(ctx_ptr);
+        (void)(argc);
+        (void)(argv);
     };
 
     auto destructor = [](void* ptr) {
         // Placeholder for destructor implementation
+        (void)(ptr);
     };
 
     return sqlite3_create_window_function(db->handle, function_name.utf8().get_data(), n_arg, text_rep, &ctx, trampoline, nullptr, nullptr, nullptr, destructor);
@@ -4016,7 +4047,11 @@ int SqliteWrapper::constant_utf16_aligned(void) {
 }
 
 int SqliteWrapper::constant_utf8_zt(void) {
+#ifdef SQLITE_UTF8_ZT
     return SQLITE_UTF8_ZT;
+#else
+    return -1;
+#endif
 }
 
 int SqliteWrapper::constant_deterministic(void) {
@@ -4077,6 +4112,9 @@ int SqliteWrapper::memory_alarm(Callable callback, int64_t threshold) {
 
     auto trampoline = [](void* ptr, sqlite3_int64 current, int num) -> void {
         _AlarmCtx* ctx = (_AlarmCtx*)ptr;
+        (void)(ctx);
+        (void)(current);
+        (void)(num);
         // Placeholder for callback implementation
     };
 
@@ -4420,6 +4458,7 @@ void SqliteWrapper::activate_cerod(String passphrase) {
     #else
         // CEROD is not enabled in this SQLite build
         // This function should not be called
+        (void)(passphrase);
     #endif
 }
 

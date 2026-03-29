@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 message(STATUS "Using toolchain file: " "${CMAKE_TOOLCHAIN_FILE}")
+option(ENABLE_WERROR "Enable warnings as errors (ON|OFF)" OFF)
 
 # Auto-enable sccache or ccache if available since we are rebuilding godot-cpp and the bindings frequently
 set(CACHE_PROGRAMS sccache ccache)
@@ -78,7 +79,6 @@ set(GODOTCPP_DISABLE_EXCEPTIONS OFF)
 # Godot C++ bindings
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/godot-cpp")
 
-
 # Dependencies
 find_package(unofficial-sqlite3 CONFIG REQUIRED)  # TODO: Replace with your dependencies
 
@@ -113,6 +113,32 @@ else()
     add_library(${PROJECT_NAME} SHARED ${SOURCES} ${DOC_GEN_FILE})
 endif()
 target_link_libraries(${PROJECT_NAME} PRIVATE godot-cpp unofficial::sqlite3::sqlite3)
+
+# Maximum warnings and treat them as errors
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE godot-cpp/include) # Don't warn about godot-cpp headers since we don't control them
+if(MSVC)
+    set(WARN_FLAGS "/W4")
+    if(ENABLE_WERROR)
+        list(APPEND WARN_FLAGS "/WX")
+    endif()
+else()
+    set(WARN_FLAGS "-Wall;-Wextra;-Wpedantic")
+    if(ENABLE_WERROR)
+        list(APPEND WARN_FLAGS "-Werror")
+    endif()
+endif()
+set_source_files_properties(${SOURCES} PROPERTIES COMPILE_OPTIONS "${WARN_FLAGS}")
+
+# Also figure out runtime issues in debug builds with sanitizers if supported by the compiler
+function(enable_sanitizers target)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:-fsanitize=address,undefined -fno-omit-frame-pointer>)
+        target_link_options(${target} PRIVATE $<$<CONFIG:Debug>:-fsanitize=address,undefined>)
+    elseif(MSVC)
+        target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:/RTC1>)
+    endif()
+endfunction()
+enable_sanitizers(${PROJECT_NAME})
 
 # Install the complete bindings to the demo project with the correct suffix
 get_target_property(GODOTCPP_SUFFIX godot-cpp GODOTCPP_SUFFIX)

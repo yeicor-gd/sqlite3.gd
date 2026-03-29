@@ -34,6 +34,7 @@ int SQLite3::os_end() {
 }
 
 int SQLite3::config(int op, Variant args) {
+    (void)(args);
     // Simplified: varargs not handled, just call with op
     return sqlite3_config(op);
 }
@@ -173,6 +174,7 @@ int64_t SQLite3::hard_heap_limit64(int64_t limit) {
 }
 
 int SQLite3::test_control(int op, Variant args) {
+    (void)(args);
     // Simplified
     return sqlite3_test_control(op);
 }

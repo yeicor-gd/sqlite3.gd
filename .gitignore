@@ -1,6 +1,7 @@
 # Ignore generated source files
 /src/gen*
 /gen/
+/.autowrapper
 
 # Build artifacts.
 /build/
