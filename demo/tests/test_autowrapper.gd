@@ -1,10 +1,4 @@
-@tool
 class_name TestAutowrapper
-extends EditorScript
-
-func _run():
-	run()
-
 
 static func run():
 	var wrapper := SqliteWrapper.new()

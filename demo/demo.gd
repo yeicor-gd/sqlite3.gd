@@ -1,4 +1,5 @@
 extends Node
+class_name Demo
 
 @onready var log_label: Label = $ScrollContainer/LogLabel
 
