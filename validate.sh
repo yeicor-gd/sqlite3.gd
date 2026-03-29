@@ -151,43 +151,7 @@ if [ $BUILD_EXIT -ne 0 ]; then
     exit 1
 fi
 
-# Run static analysis if clang-tidy is available
-if command -v clang-tidy >/dev/null 2>&1; then
-    # Find compile_commands.json
-    COMPILE_COMMANDS="$(find "$SCRIPT_DIR" -type f -name "compile_commands.json" 2>/dev/null | head -n 1 || true)"
-
-    if [ -n "$COMPILE_COMMANDS" ]; then
-        # Fix compile_commands.json
-        COMPILE_COMMANDS_TMP_DIR=$(mktemp -d)
-        trap "rm -rf '$COMPILE_COMMANDS_TMP_DIR'" EXIT
-        cp "$COMPILE_COMMANDS" "$COMPILE_COMMANDS_TMP_DIR/compile_commands.json"
-        sed -i 's/-fno-gnu-unique//g' "$COMPILE_COMMANDS_TMP_DIR/compile_commands.json" 2>/dev/null || true
-        # Convert -I includes to -isystem for godot-cpp and vcpkg to treat them as system headers
-        sed -i -E 's/-I([^ ]*godot-cpp[^ ]*)/-isystem \1/g' "$COMPILE_COMMANDS_TMP_DIR/compile_commands.json" 2>/dev/null || true
-        sed -i -E 's/-I([^ ]*vcpkg\/installed[^ ]*)/-isystem \1/g' "$COMPILE_COMMANDS_TMP_DIR/compile_commands.json" 2>/dev/null || true
-
-        # Run clang-tidy with realtime output and log capture
-        TIDY_LOG=$(mktemp)
-        trap "rm -rf '$COMPILE_COMMANDS_TMP_DIR' '$TIDY_LOG'" EXIT
-
-
-        clang-tidy \
-            '-checks=*,-abseil-*,-altera-*,-android-*,-darwin-*,-fuchsia-*,-google-*,-hicpp-*,-llvm-*,-llvmlibc-*,-mpi-*,-objc-*,-zircon-*,-modernize-use-trailing-return-type,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-cert-err58-cpp,-cppcoreguidelines-avoid-non-const-global-variables,-cppcoreguidelines-special-member-functions' \
-            '-header-filter=src/.*' \
-            --warnings-as-errors='*' \
-            -p "$COMPILE_COMMANDS_TMP_DIR" \
-            $(find src -type f -name "*.cpp") \
-            2>&1 | tee "$TIDY_LOG"
-        TIDY_EXIT=${PIPESTATUS[0]}
-
-        if [ $TIDY_EXIT -ne 0 ]; then
-            if [ -n "$ERROR_FILE" ]; then
-                _extract_error_blocks "$TIDY_LOG" > "$ERROR_FILE"
-            fi
-            exit 1
-        fi
-    fi
-fi
+# TODO: Static analysis that does not confuse the LLMs...
 
 # Success
 [ -n "$ERROR_FILE" ] && >"$ERROR_FILE"

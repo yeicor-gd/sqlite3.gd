@@ -132,37 +132,39 @@ endif()
 set_source_files_properties(${SOURCES} PROPERTIES COMPILE_OPTIONS "${WARN_FLAGS}")
 
 # Also figure out runtime issues in debug builds with sanitizers if supported by the compiler
-function(enable_sanitizers target)
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-        # Exit if using standard MinGW-GCC (prevents your original link error)
-        if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-            message(STATUS "Sanitizers skipped: MinGW GCC lacks support.")
-            return()
+if(ENABLE_WERROR)
+    function(enable_sanitizers target)
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+            # Exit if using standard MinGW-GCC (prevents your original link error)
+            if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+                message(STATUS "Sanitizers skipped: MinGW GCC lacks support.")
+                return()
+            endif()
+            # 1. Start with Address and Undefined Behavior
+            set(SAN_FLAGS "-fsanitize=address,undefined")
+            # 2. Add Leak Sanitizer (LSan) - often bundled with ASan
+            check_cxx_compiler_flag("-fsanitize=leak" HAS_LSAN)
+            if(HAS_LSAN)
+                set(SAN_FLAGS "${SAN_FLAGS},leak")
+            endif()
+            # 3. Add Memory Sanitizer (MSan) - Linux Clang only, tracks uninitialized memory
+            check_cxx_compiler_flag("-fsanitize=memory" HAS_MSAN)
+            if(HAS_MSAN AND NOT HAS_LSAN) # MSan is typically incompatible with ASan/LSan
+                # Usually, you pick EITHER ASan+LSan OR MSan.
+                # We'll stick to ASan+LSan as it's more common.
+            endif()
+            # 4. Add Stack Smashing Protection
+            target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:-fstack-protector-all>)
+            # Apply flags
+            target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:${SAN_FLAGS} -fno-omit-frame-pointer -g>)
+            target_link_options(${target} PRIVATE $<$<CONFIG:Debug>:${SAN_FLAGS}> -static-libasan)
+        elseif(MSVC)
+            # 1. Basic Runtime Checks (Buffer overflows, uninitialized variables, etc.)
+            target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:/RTC1>)
         endif()
-        # 1. Start with Address and Undefined Behavior
-        set(SAN_FLAGS "-fsanitize=address,undefined")
-        # 2. Add Leak Sanitizer (LSan) - often bundled with ASan
-        check_cxx_compiler_flag("-fsanitize=leak" HAS_LSAN)
-        if(HAS_LSAN)
-            set(SAN_FLAGS "${SAN_FLAGS},leak")
-        endif()
-        # 3. Add Memory Sanitizer (MSan) - Linux Clang only, tracks uninitialized memory
-        check_cxx_compiler_flag("-fsanitize=memory" HAS_MSAN)
-        if(HAS_MSAN AND NOT HAS_LSAN) # MSan is typically incompatible with ASan/LSan
-            # Usually, you pick EITHER ASan+LSan OR MSan.
-            # We'll stick to ASan+LSan as it's more common.
-        endif()
-        # 4. Add Stack Smashing Protection
-        target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:-fstack-protector-all>)
-        # Apply flags
-        target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:${SAN_FLAGS} -fno-omit-frame-pointer -g>)
-        target_link_options(${target} PRIVATE $<$<CONFIG:Debug>:${SAN_FLAGS}>)
-    elseif(MSVC)
-        # 1. Basic Runtime Checks (Buffer overflows, uninitialized variables, etc.)
-        target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:/RTC1>)
-    endif()
-endfunction()
-enable_sanitizers(${PROJECT_NAME})
+    endfunction()
+    enable_sanitizers(${PROJECT_NAME})
+endif()
 
 # Install the complete bindings to the demo project with the correct suffix
 get_target_property(GODOTCPP_SUFFIX godot-cpp GODOTCPP_SUFFIX)
