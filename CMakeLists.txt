@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
+include(CheckCXXCompilerFlag)
+
 message(STATUS "Using toolchain file: " "${CMAKE_TOOLCHAIN_FILE}")
 option(ENABLE_WERROR "Enable warnings as errors (ON|OFF)" OFF)
 
@@ -131,11 +133,49 @@ set_source_files_properties(${SOURCES} PROPERTIES COMPILE_OPTIONS "${WARN_FLAGS}
 
 # Also figure out runtime issues in debug builds with sanitizers if supported by the compiler
 function(enable_sanitizers target)
-    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-        target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:-fsanitize=address,undefined -fno-omit-frame-pointer>)
-        target_link_options(${target} PRIVATE $<$<CONFIG:Debug>:-fsanitize=address,undefined>)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        # Exit if using standard MinGW-GCC (prevents your original link error)
+        if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            message(STATUS "Sanitizers skipped: MinGW GCC lacks support.")
+            return()
+        endif()
+        # 1. Start with Address and Undefined Behavior
+        set(SAN_FLAGS "-fsanitize=address,undefined")
+        # 2. Add Leak Sanitizer (LSan) - often bundled with ASan
+        check_cxx_compiler_flag("-fsanitize=leak" HAS_LSAN)
+        if(HAS_LSAN)
+            set(SAN_FLAGS "${SAN_FLAGS},leak")
+        endif()
+        # 3. Add Memory Sanitizer (MSan) - Linux Clang only, tracks uninitialized memory
+        check_cxx_compiler_flag("-fsanitize=memory" HAS_MSAN)
+        if(HAS_MSAN AND NOT HAS_LSAN) # MSan is typically incompatible with ASan/LSan
+            # Usually, you pick EITHER ASan+LSan OR MSan.
+            # We'll stick to ASan+LSan as it's more common.
+        endif()
+        # 4. Add Stack Smashing Protection
+        target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:-fstack-protector-all>)
+        # Apply flags
+        target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:${SAN_FLAGS} -fno-omit-frame-pointer -g>)
+        target_link_options(${target} PRIVATE $<$<CONFIG:Debug>:${SAN_FLAGS}>)
     elseif(MSVC)
-        target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:/RTC1>)
+        # 1. Address Sanitizer (ASan)
+        check_cxx_compiler_flag("/fsanitize=address" HAS_MSVC_ASAN)
+        if(HAS_MSVC_ASAN)
+            # ASan requires /Zi and NO incremental linking
+            target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:/fsanitize=address /Zi /wd5059>)
+            target_link_options(${target} PRIVATE $<$<CONFIG:Debug>:/fsanitize=address /INCREMENTAL:NO>)
+            message(STATUS "MSVC ASan enabled for ${target}")
+        else()
+            target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:/RTC1>)
+        endif()
+        # 2. Control Flow Guard (Security check for indirect calls)
+        check_cxx_compiler_flag("/guard:cf" HAS_MSVC_CFG)
+        if(HAS_MSVC_CFG)
+            target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:/guard:cf>)
+            target_link_options(${target} PRIVATE $<$<CONFIG:Debug>:/guard:cf>)
+        endif()
+        # 3. Stack Buffer Security Check
+        target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:/GS>)
     endif()
 endfunction()
 enable_sanitizers(${PROJECT_NAME})
