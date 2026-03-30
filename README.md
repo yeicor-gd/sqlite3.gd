@@ -2,21 +2,23 @@
 
 This project provides SQLite3 integration for the Godot Engine using GDExtension.
 
-It includes all standard SQLite extensions, except for Unicode (ICU) support. ICU is excluded because it would increase the final build size by more than 10×. If needed, ICU can still be loaded at runtime separately.
+It focuses on being a low-level yet complete wrapper, designed as a solid foundation for building higher-level interfaces while still accounting for rare edge cases.
+
+All standard SQLite extensions are included except for Unicode (ICU) support. ICU is excluded to avoid increasing the final build size by more than 10×, but it can still be loaded separately at runtime if needed.
 
 ## ✨ Features
 
 - **Cross-Platform Support**: Runs on desktop (Windows, macOS, Linux), mobile (Android, iOS), and web (HTML5) platforms.
-- **Demo Project**: includes [demo scene](demo/) to get you started quickly, with a [web version](https://yeicor.github.io/sqlite3.gd-auto3/demo/) available.
+- **Demo Project**: includes [demo scene](demo/) to get you started quickly, with a [web version](https://github.com/yeicor-gd/sqlite3.gd/demo/) available.
 - **Comprehensive Documentation**: includes [class references](doc_classes/) for seamless Godot editor integration.
 - **High Performance**: leverages C++ for optimized performance and low-level access.
 - **Easy Integration**: drop-in [GDExtension](https://docs.godotengine.org/en/stable/tutorials/scripting/gdextension/index.html) with simple Godot API bindings.
-- **Automated Builds**: uses GitHub Actions for continuous integration including tests and prebuilt binaries.
+- **Automated Builds**: uses GitHub Actions for continuous integration, including tests and prebuilt binaries.
 - **Dependency Management**: integrated [VCPKG](https://github.com/microsoft/vcpkg) for hassle-free library management.
 
 ## 🚀 Quick Start
 
-1. **Download**: [latest release](https://github.com/yeicor/sqlite3.gd-auto3/releases) or [nightly builds](https://github.com/yeicor/sqlite3.gd-auto3/actions) (look for `...-addon.zip`).
+1. **Download**: [latest release](https://github.com/yeicor-gd/sqlite3.gd/releases) or [nightly builds](https://github.com/yeicor-gd/sqlite3.gd/actions) (look for `...-addon.zip`).
 2. **Extract**: the downloaded `...-addon.zip` into your project's root.
 3. **Profit**: see [demo/demo.gd](demo/demo.gd) for a complete example.
 
