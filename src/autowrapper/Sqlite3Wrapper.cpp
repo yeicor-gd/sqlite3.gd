@@ -3581,17 +3581,6 @@ int64_t Sqlite3Wrapper::wal_hook(const Ref<Sqlite3Handle>& db, Callable callback
         Variant user_data;
     };
 
-    static thread_local HashMap<intptr_t, WalHookCtx *> wal_hook_map;
-
-    // If a previous context exists for this db, free it
-    intptr_t db_ptr = reinterpret_cast<intptr_t>(db->handle);
-    WalHookCtx *old_ctx = nullptr;
-    if (wal_hook_map.has(db_ptr)) {
-        old_ctx = wal_hook_map[db_ptr];
-        memdelete(old_ctx);
-        wal_hook_map.erase(db_ptr);
-    }
-
     // If callback is not valid, unregister hook
     if (!callback.is_valid()) {
         void *prev = ::sqlite3_wal_hook(db->handle, nullptr, nullptr);
@@ -3602,7 +3591,6 @@ int64_t Sqlite3Wrapper::wal_hook(const Ref<Sqlite3Handle>& db, Callable callback
     WalHookCtx *ctx = memnew(WalHookCtx);
     ctx->cb = callback;
     ctx->user_data = user_data;
-    wal_hook_map[db_ptr] = ctx;
 
     // Define trampoline
     auto trampoline = [](void *ud, sqlite3 *c_db, const char *c_db_name, int n_pages) -> int {
