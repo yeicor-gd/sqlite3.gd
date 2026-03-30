@@ -2,4 +2,5 @@
 extends EditorScript
 
 func _run():
-	Demo.new()._ready()
+	# Start with autowrapper tests
+	TestAutowrapper.run()

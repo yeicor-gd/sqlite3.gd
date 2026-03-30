@@ -147,17 +147,11 @@ if(ENABLE_WERROR)
             if(HAS_LSAN)
                 set(SAN_FLAGS "${SAN_FLAGS},leak")
             endif()
-            # 3. Add Memory Sanitizer (MSan) - Linux Clang only, tracks uninitialized memory
-            check_cxx_compiler_flag("-fsanitize=memory" HAS_MSAN)
-            if(HAS_MSAN AND NOT HAS_LSAN) # MSan is typically incompatible with ASan/LSan
-                # Usually, you pick EITHER ASan+LSan OR MSan.
-                # We'll stick to ASan+LSan as it's more common.
-            endif()
             # 4. Add Stack Smashing Protection
             target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:-fstack-protector-all>)
             # Apply flags
-            target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:${SAN_FLAGS} -fno-omit-frame-pointer -g>)
-            target_link_options(${target} PRIVATE $<$<CONFIG:Debug>:${SAN_FLAGS}> -static-libasan)
+            target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:${SAN_FLAGS} -static-libasan -fno-omit-frame-pointer -g>)
+            target_link_options(${target} PRIVATE $<$<CONFIG:Debug>:${SAN_FLAGS} -static-libasan>)
         elseif(MSVC)
             # 1. Basic Runtime Checks (Buffer overflows, uninitialized variables, etc.)
             target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:/RTC1>)

@@ -1,4 +1,9 @@
-#include "SqliteWrapper_module.h"
+#include "module.h" // NOLINT(misc-include-cleaner)
+#include "Sqlite3Wrapper.h" // NOLINT(misc-include-cleaner)
+#include <gdextension_interface.h> // NOLINT(misc-include-cleaner)
+#include <godot_cpp/godot.hpp> // NOLINT(misc-include-cleaner)
+#include <godot_cpp/core/class_db.hpp> // NOLINT(misc-include-cleaner)
+#include <godot_cpp/core/defs.hpp> // NOLINT(misc-include-cleaner)
 
 void gdext_initialize_module_auto(ModuleInitializationLevel p_level) {
     if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
@@ -7,6 +12,7 @@ void gdext_initialize_module_auto(ModuleInitializationLevel p_level) {
 
     // Register wrapped classes
     GDREGISTER_CLASS(Fts5ApiHandle);
+    GDREGISTER_CLASS(Fts5TokenizerHandle);
     GDREGISTER_CLASS(Fts5TokenizerV2Handle);
     GDREGISTER_CLASS(Fts5contextHandle);
     GDREGISTER_CLASS(Fts5extensionapiHandle);
@@ -19,6 +25,7 @@ void gdext_initialize_module_auto(ModuleInitializationLevel p_level) {
     GDREGISTER_CLASS(Sqlite3ChangesetIterHandle);
     GDREGISTER_CLASS(Sqlite3ContextHandle);
     GDREGISTER_CLASS(Sqlite3FileHandle);
+    GDREGISTER_CLASS(Sqlite3FilenameHandle);
     GDREGISTER_CLASS(Sqlite3Handle);
     GDREGISTER_CLASS(Sqlite3IndexInfoHandle);
     GDREGISTER_CLASS(Sqlite3IoMethodsHandle);
@@ -41,7 +48,7 @@ void gdext_initialize_module_auto(ModuleInitializationLevel p_level) {
     GDREGISTER_CLASS(Sqlite3VfsHandle);
     GDREGISTER_CLASS(Sqlite3VtabCursorHandle);
     GDREGISTER_CLASS(Sqlite3VtabHandle);
-    GDREGISTER_CLASS(SqliteWrapper);
+    GDREGISTER_CLASS(Sqlite3Wrapper);
 }
 
 void gdext_uninitialize_module_auto(ModuleInitializationLevel p_level) {
@@ -54,10 +61,10 @@ void gdext_uninitialize_module_auto(ModuleInitializationLevel p_level) {
 extern "C" {
     GDExtensionBool GDE_EXPORT gdext_library_init_auto(
         GDExtensionInterfaceGetProcAddress p_get_proc_address,
-        const GDExtensionClassLibraryPtr p_library,
+        GDExtensionClassLibraryPtr p_library,
         GDExtensionInitialization *r_initialization
     ) {
-        godot::GDExtensionBinding::InitObject init_obj(
+        const godot::GDExtensionBinding::InitObject init_obj(
             p_get_proc_address, p_library, r_initialization
         );
 
