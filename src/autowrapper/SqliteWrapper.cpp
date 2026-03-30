@@ -3522,144 +3522,96 @@ int SqliteWrapper::prepare_from_ddl_flag(void) {
 int SqliteWrapper::prepare(Ref<Sqlite3Handle> db, String sql, int max_bytes, Ref<Sqlite3StmtHandle> out_stmt, String out_tail) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);
     ERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);
+
     CharString sql_utf8 = sql.utf8();
-    const char* sql_c = sql_utf8.get_data();
-    int len = max_bytes < 0 ? -1 : max_bytes;
-    const char* tail_c = nullptr;
-    sqlite3_stmt* stmt = nullptr;
-    int rc = sqlite3_prepare(db->handle, sql_c, len, &stmt, &tail_c);
-    if (rc == SQLITE_OK) {
-        out_stmt->handle = stmt;
-        out_tail = tail_c ? String::utf8(tail_c) : String();
-    } else {
-        out_stmt->handle = nullptr;
-        out_tail = String();
-    }
+    const char *sql_c = sql_utf8.get_data();
+    int len = (max_bytes < 0) ? -1 : max_bytes;
+
+    sqlite3_stmt *stmt = nullptr;
+
+    int rc = sqlite3_prepare(db->handle, sql_c, len, &stmt, nullptr);
+
+    out_stmt->handle = (rc == SQLITE_OK) ? stmt : nullptr;
     return rc;
 }
 
 int SqliteWrapper::prepare_v2(Ref<Sqlite3Handle> db, String sql, int max_bytes, Ref<Sqlite3StmtHandle> out_stmt, String out_tail) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);
     ERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);
+
     CharString sql_utf8 = sql.utf8();
-    const char* sql_c = sql_utf8.get_data();
-    int len = max_bytes < 0 ? -1 : max_bytes;
-    const char* tail_c = nullptr;
-    sqlite3_stmt* stmt = nullptr;
-    int rc = sqlite3_prepare_v2(db->handle, sql_c, len, &stmt, &tail_c);
-    if (rc == SQLITE_OK) {
-        out_stmt->handle = stmt;
-        out_tail = tail_c ? String::utf8(tail_c) : String();
-    } else {
-        out_stmt->handle = nullptr;
-        out_tail = String();
-    }
+    const char *sql_c = sql_utf8.get_data();
+    int len = (max_bytes < 0) ? -1 : max_bytes;
+
+    sqlite3_stmt *stmt = nullptr;
+
+    int rc = sqlite3_prepare_v2(db->handle, sql_c, len, &stmt, nullptr);
+
+    out_stmt->handle = (rc == SQLITE_OK) ? stmt : nullptr;
     return rc;
 }
 
 int SqliteWrapper::prepare_v3(Ref<Sqlite3Handle> db, String sql, int max_bytes, unsigned int prep_flags, Ref<Sqlite3StmtHandle> out_stmt, String out_tail) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);
     ERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);
+
     CharString sql_utf8 = sql.utf8();
-    const char* sql_c = sql_utf8.get_data();
-    int len = max_bytes < 0 ? -1 : max_bytes;
-    const char* tail_c = nullptr;
-    sqlite3_stmt* stmt = nullptr;
-    int rc = sqlite3_prepare_v3(db->handle, sql_c, len, prep_flags, &stmt, &tail_c);
-    if (rc == SQLITE_OK) {
-        out_stmt->handle = stmt;
-        out_tail = tail_c ? String::utf8(tail_c) : String();
-    } else {
-        out_stmt->handle = nullptr;
-        out_tail = String();
-    }
+    const char *sql_c = sql_utf8.get_data();
+    int len = (max_bytes < 0) ? -1 : max_bytes;
+
+    sqlite3_stmt *stmt = nullptr;
+
+    int rc = sqlite3_prepare_v3(db->handle, sql_c, len, prep_flags, &stmt, nullptr);
+
+    out_stmt->handle = (rc == SQLITE_OK) ? stmt : nullptr;
     return rc;
 }
 
 int SqliteWrapper::prepare16(Ref<Sqlite3Handle> db, String sql, int max_bytes, Ref<Sqlite3StmtHandle> out_stmt, String out_tail) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);
     ERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);
+
     Char16String sql_utf16 = sql.utf16();
-    const void* sql_ptr = sql_utf16.ptr();
-    int len = max_bytes < 0 ? -1 : max_bytes;
-    const void* tail_c = nullptr;
-    sqlite3_stmt* stmt = nullptr;
-    int rc = sqlite3_prepare16(db->handle, sql_ptr, len, &stmt, &tail_c);
-    if (rc == SQLITE_OK) {
-        out_stmt->handle = stmt;
-        if (tail_c) {
-            int tail_len_chars = 0;
-            const char16_t* p = (const char16_t*)tail_c;
-            while (*p != 0 && tail_len_chars < 1024) {
-                p++;
-                tail_len_chars++;
-            }
-            out_tail = String::utf16((const char16_t*)tail_c, tail_len_chars);
-        } else {
-            out_tail = String();
-        }
-    } else {
-        out_stmt->handle = nullptr;
-        out_tail = String();
-    }
+    const void *sql_ptr = sql_utf16.ptr();
+    int len = (max_bytes < 0) ? -1 : max_bytes;
+
+    sqlite3_stmt *stmt = nullptr;
+
+    int rc = sqlite3_prepare16(db->handle, sql_ptr, len, &stmt, nullptr);
+
+    out_stmt->handle = (rc == SQLITE_OK) ? stmt : nullptr;
     return rc;
 }
 
 int SqliteWrapper::prepare16_v2(Ref<Sqlite3Handle> db, String sql, int max_bytes, Ref<Sqlite3StmtHandle> out_stmt, String out_tail) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);
     ERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);
+
     Char16String sql_utf16 = sql.utf16();
-    const void* sql_ptr = sql_utf16.ptr();
-    int len = max_bytes < 0 ? -1 : max_bytes;
-    const void* tail_c = nullptr;
-    sqlite3_stmt* stmt = nullptr;
-    int rc = sqlite3_prepare16_v2(db->handle, sql_ptr, len, &stmt, &tail_c);
-    if (rc == SQLITE_OK) {
-        out_stmt->handle = stmt;
-        if (tail_c) {
-            int tail_len_chars = 0;
-            const char16_t* p = (const char16_t*)tail_c;
-            while (*p != 0 && tail_len_chars < 1024) {
-                p++;
-                tail_len_chars++;
-            }
-            out_tail = String::utf16((const char16_t*)tail_c, tail_len_chars);
-        } else {
-            out_tail = String();
-        }
-    } else {
-        out_stmt->handle = nullptr;
-        out_tail = String();
-    }
+    const void *sql_ptr = sql_utf16.ptr();
+    int len = (max_bytes < 0) ? -1 : max_bytes;
+
+    sqlite3_stmt *stmt = nullptr;
+
+    int rc = sqlite3_prepare16_v2(db->handle, sql_ptr, len, &stmt, nullptr);
+
+    out_stmt->handle = (rc == SQLITE_OK) ? stmt : nullptr;
     return rc;
 }
 
 int SqliteWrapper::prepare16_v3(Ref<Sqlite3Handle> db, String sql, int max_bytes, unsigned int prep_flags, Ref<Sqlite3StmtHandle> out_stmt, String out_tail) {
     ERR_FAIL_COND_V(db.is_null() || !db->is_valid(), SQLITE_ERROR);
     ERR_FAIL_COND_V(out_stmt.is_null(), SQLITE_ERROR);
+
     Char16String sql_utf16 = sql.utf16();
-    const void* sql_ptr = sql_utf16.ptr();
-    int len = max_bytes < 0 ? -1 : max_bytes;
-    const void* tail_c = nullptr;
-    sqlite3_stmt* stmt = nullptr;
-    int rc = sqlite3_prepare16_v3(db->handle, sql_ptr, len, prep_flags, &stmt, &tail_c);
-    if (rc == SQLITE_OK) {
-        out_stmt->handle = stmt;
-        if (tail_c) {
-            int tail_len_chars = 0;
-            const char16_t* p = (const char16_t*)tail_c;
-            while (*p != 0 && tail_len_chars < 1024) {
-                p++;
-                tail_len_chars++;
-            }
-            out_tail = String::utf16((const char16_t*)tail_c, tail_len_chars);
-        } else {
-            out_tail = String();
-        }
-    } else {
-        out_stmt->handle = nullptr;
-        out_tail = String();
-    }
+    const void *sql_ptr = sql_utf16.ptr();
+    int len = (max_bytes < 0) ? -1 : max_bytes;
+
+    sqlite3_stmt *stmt = nullptr;
+
+    int rc = sqlite3_prepare16_v3(db->handle, sql_ptr, len, prep_flags, &stmt, nullptr);
+
+    out_stmt->handle = (rc == SQLITE_OK) ? stmt : nullptr;
     return rc;
 }
 
