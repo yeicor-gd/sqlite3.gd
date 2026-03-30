@@ -21,7 +21,7 @@ export VCPKG_DISABLE_METRICS=1
 export VCPKG_DEFAULT_TRIPLET=x64-linux
 export VCPKG_OVERLAY_TRIPLETS="$SCRIPT_DIR/vcpkg_triplets"
 export VCPKG_OVERLAY_PORTS="$SCRIPT_DIR/vcpkg_ports"
-export GDEXT_CMAKE_ARGS="-DGODOTCPP_TARGET=template_debug -DGODOTCPP_PRECISION=single -DGODOTCPP_THREADS=on"
+export GDEXT_CMAKE_ARGS="-DGODOTCPP_TARGET=template_debug -DGODOTCPP_PRECISION=single -DGODOTCPP_THREADS=on -DENABLE_WERROR=on"
 
 # Clean vcpkg cache
 "$VCPKG_ROOT/vcpkg" remove gdext 2>/dev/null || true
