@@ -2404,7 +2404,7 @@ int Sqlite3Wrapper::trace_v2(const Ref<Sqlite3Handle>& db, int64_t mask, Callabl
     };
 
     // If callback is invalid or mask is zero, tracing is disabled.
-    int result = ::sqlite3_trace_v2(db->handle, int(mask), callback.is_valid() ? trampoline : nullptr, ctx);
+    int result = ::sqlite3_trace_v2(db->handle, int(mask), callback.is_valid() ? +trampoline : nullptr, ctx);
     return result;
 }
 
@@ -5196,9 +5196,9 @@ int Sqlite3Wrapper::create_function(const Ref<Sqlite3Handle>& db, const String& 
         int(n_arg),
         int(text_rep),
         reinterpret_cast<void*>(ctx),
-        x_func.is_valid() ? xFunc : nullptr,
-        x_step.is_valid() ? xStep : nullptr,
-        x_final.is_valid() ? xFinal : nullptr
+        x_func.is_valid() ? +xFunc : nullptr,
+        x_step.is_valid() ? +xStep : nullptr,
+        x_final.is_valid() ? +xFinal : nullptr
     );
     if (ret != 0) {
         memdelete(ctx);
@@ -5277,9 +5277,9 @@ int Sqlite3Wrapper::create_function16(const Ref<Sqlite3Handle>& db, const String
     // Register the function
     int result = ::sqlite3_create_function16(
         db->handle, zFunctionName, n_arg, e_text_rep, ctx,
-        x_func.is_valid() ? xFunc : nullptr,
-        x_step.is_valid() ? xStep : nullptr,
-        x_final.is_valid() ? xFinal : nullptr
+        x_func.is_valid() ? +xFunc : nullptr,
+        x_step.is_valid() ? +xStep : nullptr,
+        x_final.is_valid() ? +xFinal : nullptr
     );
     if (result != 0) {
         memdelete(ctx);
@@ -5359,9 +5359,9 @@ int Sqlite3Wrapper::create_function_v2(const Ref<Sqlite3Handle>& db, const Strin
         (int)n_arg,
         (int)e_text_rep,
         ctx,
-        x_func.is_valid() ? trampoline_func : nullptr,
-        x_step.is_valid() ? trampoline_step : nullptr,
-        x_final.is_valid() ? trampoline_final : nullptr,
+        x_func.is_valid() ? +trampoline_func : nullptr,
+        x_step.is_valid() ? +trampoline_step : nullptr,
+        x_final.is_valid() ? +trampoline_final : nullptr,
         trampoline_destroy
     );
     return result;
@@ -6645,7 +6645,7 @@ int64_t Sqlite3Wrapper::preupdate_hook(const Ref<Sqlite3Handle>& db, Callable on
         args.push_back((int64_t)iKey2);
         ctx->cb.callv(args);
     };
-    void *result = ::sqlite3_preupdate_hook(db->handle, ctx ? trampoline : nullptr, ctx);
+    void *result = ::sqlite3_preupdate_hook(db->handle, ctx ? +trampoline : nullptr, ctx);
     // Clean up previous context if present and not null.
     if (prev_ctx && prev_ctx != ctx) {
         memdelete(prev_ctx);
@@ -7205,7 +7205,7 @@ int Sqlite3Wrapper::changeset_apply(const Ref<Sqlite3Handle>& db, const PackedBy
         db->handle,
         static_cast<int>(changeset.size()),
         (void *)changeset.ptr(),
-        filter.is_valid() ? xFilter : nullptr,
+        filter.is_valid() ? +xFilter : nullptr,
         xConflict,
         &ctx);
     return result;
