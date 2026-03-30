@@ -84,7 +84,7 @@ jobs:
       - name: Cache Godot API dump
         id: cache
         uses: actions/cache@v5
-        with: &cache-godot-api-dump-with
+        with:
           path: godot-cpp/gdextension/extension_api.json
           key: godot-api-dump-${{ needs.read-versions.outputs.godot_min_version_tag }}-${{ matrix.float-precision }}
           enableCrossOsArchive: true
@@ -106,6 +106,12 @@ jobs:
           ./godot-repo/bin/godot.* --dump-extension-api --headless
           rm -rf godot-repo
           mv extension_api.json godot-cpp/gdextension/
+
+      - name: Upload Godot API dump
+        uses: actions/upload-artifact@v7
+        with:
+          name: godot-api-${{ matrix.float-precision }}
+          path: godot-cpp/gdextension/extension_api.json
 
   build:
     needs: [prepare-api, read-versions]
@@ -155,9 +161,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Restore Godot API dump
-        uses: actions/cache/restore@v5
-        with: *cache-godot-api-dump-with
+      - name: Download Godot API dump
+        uses: actions/download-artifact@v8
+        with:
+          name: godot-api-${{ matrix.float-precision }}
+          path: godot-cpp/gdextension/
 
       - name: Setup for x86 Linux
         if: matrix.target.vcpkg_triplet == 'x86-linux'
@@ -366,6 +374,7 @@ jobs:
           version: ${{ matrix.godot-version }}
           use-dotnet: false
           include-templates: true
+          cache: false  # Bypassing cache for this simple download to ensure the API dump and other sources stays cached.
 
       - name: Run Godot editor to import all resources
         shell: bash
