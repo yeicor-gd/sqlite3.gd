@@ -132,7 +132,11 @@ jobs:
             { vcpkg_triplet: arm64-windows-static, os: windows-2025 }, # MSVC instead of mingw
             { vcpkg_triplet: arm64-osx, os: macos-15 },
             { vcpkg_triplet: x64-osx, os: macos-15 },
-            { vcpkg_triplet: wasm32-emscripten, os: ubuntu-24.04, threads: off },
+            {
+              vcpkg_triplet: wasm32-emscripten,
+              os: ubuntu-24.04,
+              threads: off,
+            },
             { vcpkg_triplet: wasm32-emscripten, os: ubuntu-24.04, threads: on },
             { vcpkg_triplet: x64-android, os: ubuntu-24.04 },
             { vcpkg_triplet: x86-android, os: ubuntu-24.04 },
@@ -146,6 +150,7 @@ jobs:
     runs-on: ${{ matrix.target.os }}
     permissions:
       actions: write
+      contents: read
     steps:
       - name: Free disk space (Ubuntu)
         if: matrix.target.os == 'ubuntu-24.04' || matrix.target.os == 'ubuntu-24.04-arm'
@@ -374,21 +379,13 @@ jobs:
           version: ${{ matrix.godot-version }}
           use-dotnet: false
           include-templates: true
-          cache: false  # Bypassing cache for this simple download to ensure the API dump and other sources stays cached.
-
-      - name: Run Godot editor to import all resources
-        shell: bash
-        run: |
-          set -e
-          godot --path demo --editor --quit --headless || true
+          cache: false # Bypassing cache for this simple download to ensure the API dump and other sources stays cached.
 
       - name: Run demo test
         shell: bash
         if: matrix.target.export_name == 'Linux' || matrix.target.export_name == 'Windows Desktop' || matrix.target.export_name == 'macOS'
         run: |
-          set -e
-          godot --path demo --quit --headless | tee output.log
-          grep -q "Demo finished successfully" output.log
+          DO_BUILD=false GODOT_VERSION="system" ./validate.sh /tmp/a.txt || ( echo "====== ERRORS ======" && cat /tmp/a.txt && exit 1 )
 
       - name: Export demo
         if: matrix.godot-version == needs.read-versions.outputs.godot_max_version
@@ -503,7 +500,7 @@ jobs:
 
   success: # No-op success job for github ruleset detection
     runs-on: ubuntu-24.04
-    needs: retry-on-failure
+    needs: test
     steps:
       - name: CI success marker
         run: echo "CI completed successfully (no-op success job for github ruleset detection)"
