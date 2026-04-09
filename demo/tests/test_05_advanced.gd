@@ -365,7 +365,7 @@ func test_str_multiple_appends() -> String:
 func test_str_appendchar() -> String:
 	var db := _open_memory()
 	var str_obj := s.str_new(db)
-	s.str_appendchar(str_obj, 4, ord('x'))
+	s.str_appendchar(str_obj, 4, "x".to_ascii_buffer()[0])
 	var v: String = s.str_value(str_obj)
 	s.str_free(str_obj)
 	s.close(db)
@@ -821,19 +821,19 @@ func test_strglob_exact_match() -> String:
 	return _assert_eq("strglob exact match", rc, 0)
 
 func test_strlike_match() -> String:
-	var rc := s.strlike("%world%", "hello world", ord('\\'))
+	var rc := s.strlike("%world%", "hello world", "\\".to_ascii_buffer()[0])
 	return _assert_eq("strlike %world% matches", rc, 0)
 
 func test_strlike_no_match() -> String:
-	var rc := s.strlike("%xyz%", "hello world", ord('\\'))
+	var rc := s.strlike("%xyz%", "hello world", "\\".to_ascii_buffer()[0])
 	return _assert_ne("strlike %xyz% no match", rc, 0)
 
 func test_strlike_underscore_wildcard() -> String:
-	var rc := s.strlike("h_llo", "hello", ord('\\'))
+	var rc := s.strlike("h_llo", "hello", "\\".to_ascii_buffer()[0])
 	return _assert_eq("strlike h_llo matches hello", rc, 0)
 
 func test_strlike_case_insensitive() -> String:
-	var rc := s.strlike("HELLO", "hello", ord('\\'))
+	var rc := s.strlike("h_llo", "hello", "\\".to_ascii_buffer()[0])
 	return _assert_eq("strlike case-insensitive", rc, 0)
 
 # ===========================================================================
