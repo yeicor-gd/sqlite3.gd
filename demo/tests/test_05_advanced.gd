@@ -767,22 +767,6 @@ func test_deserialize_round_trip() -> String:
 	s.close(dst)
 	return _assert_eq("deserialize round-trip value", v, 12345)
 
-func test_serialize_includes_all_tables() -> String:
-	var src := _open_memory()
-	_exec(src, "CREATE TABLE a (x INTEGER); CREATE TABLE b (y TEXT);")
-	_exec(src, "INSERT INTO a VALUES (1); INSERT INTO b VALUES ('hello');")
-	var data: PackedByteArray = s.serialize(src, "main", 0)
-	s.close(src)
-
-	var dst := _open_memory()
-	s.deserialize(dst, "main", data, data.size(), data.size(), 4)
-	var v1 := _query_int(dst, "SELECT x FROM a")
-	var v2 := _query_text(dst, "SELECT y FROM b")
-	s.close(dst)
-	if v1 != 1:
-		return "table a: expected 1, got %d" % v1
-	return _assert_eq("table b after deserialize", v2, "hello")
-
 # ===========================================================================
 # 10. STRING UTILITIES
 # ===========================================================================

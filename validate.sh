@@ -135,7 +135,7 @@ fi
 _extract_runtime_errors() {
     local log_file="$1"
     grep -E -v "(ObjectDB|RID).*leaked|resources still in use at exit" "$log_file" | \
-    grep -A 1 -E "^ERROR:|^SCRIPT ERROR:|^handle_crash:|Shader compilation error|Script compilation error|Parse error|undefined method|undefined symbol|not found|No such|^TESTS FAILED" || return 0
+    grep -A 1 -E "^ERROR:|^SCRIPT ERROR:|^handle_crash:|Shader compilation error|Script compilation error|Parse error|undefined method|undefined symbol|not found|No such|✗|^FAILED:" || return 0
 }
 
 ERRORS=$(_extract_runtime_errors "$RUNTIME_LOG" 2>/dev/null || true)
