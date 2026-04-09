@@ -44,26 +44,8 @@ func _ready() -> void:
 	log_info("Starting test session")
 	indent_level += 1
 
-	var dir := DirAccess.open("res://tests")
-	if dir == null:
-		log_error("Could not open res://tests/")
-		quit_tests(1)
-		return
-
-	var files: Array[String] = []
-	dir.list_dir_begin()
-
-	var fname := dir.get_next()
-	while fname != "":
-		if not dir.current_is_dir() and fname.begins_with("test_") and fname.ends_with(".gd"):
-			files.append(fname)
-		fname = dir.get_next()
-
-	dir.list_dir_end()
-	files.sort()
-
 	var session_start := Time.get_ticks_usec()
-	for file in files:
+	for file in TestIndex.TEST_FILES:
 		_run_suite(file)
 	var session_duration_ms := (Time.get_ticks_usec() - session_start) / 1000.0
 
@@ -78,8 +60,7 @@ func _ready() -> void:
 	quit_tests(1 if total_failed > 0 else 0)
 
 
-func _run_suite(file: String) -> void:
-	var path := "res://tests/" + file
+func _run_suite(path: String) -> void:
 	var script := load(path)
 
 	if script == null:
@@ -105,7 +86,7 @@ func _run_suite(file: String) -> void:
 		script = null
 		return
 
-	var suite_name := file.trim_suffix(".gd")
+	var suite_name := path.split("/")[-1].trim_suffix(".gd")
 	log_info("Suite: %s" % suite_name)
 	indent_level += 1
 
