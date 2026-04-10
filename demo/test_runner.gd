@@ -6,11 +6,21 @@ const COLOR_ERROR := "#ef4444"
 const COLOR_INFO := "#3b82f6"
 const COLOR_DEBUG := "#9ca3af"
 
+const TEST_DIR := "res://tests"
+const INDEX_FILE := "res://tests/index.gd"
+
+const MAX_THREADS := 4 # ← thread pool size
+
 var log_label: RichTextLabel
 var indent_level: int = 0
 var total_passed: int = 0
 var total_failed: int = 0
+var _pending_suites := 0
+var _active_threads := 0
+var _queue: Array[String] = []
+
 var is_headless := false
+var TestIndexRef = null
 
 static var ctx := TestContext.new()
 
@@ -44,87 +54,162 @@ func _ready() -> void:
 	log_info("Starting test session")
 	indent_level += 1
 
-	var session_start := Time.get_ticks_usec()
-	for file in TestIndex.TEST_FILES:
-		_run_suite(file)
-	var session_duration_ms := (Time.get_ticks_usec() - session_start) / 1000.0
+	var test_files := _get_test_files()
+	_pending_suites = test_files.size()
+	_queue = test_files.duplicate()
 
-	indent_level -= 1
-	log_info("==============================")
+	_pump_queue()
 
-	if total_failed > 0:
-		log_error("FAILED: %d passed, %d failed (%.3f ms)" % [total_passed, total_failed, session_duration_ms])
+
+# =========================================================
+# 🧵 Thread pool
+# =========================================================
+func _pump_queue() -> void:
+	while _active_threads < MAX_THREADS and not _queue.is_empty():
+		var path = _queue.pop_front()
+		_active_threads += 1
+
+		var thread := Thread.new()
+		thread.start(Callable(self, "_thread_run_suite").bind(path, thread))
+
+
+# =========================================================
+# 🔍 Test discovery
+# =========================================================
+func _get_test_files() -> Array[String]:
+	if Engine.is_editor_hint():
+		return _get_tests_editor()
 	else:
-		log_success("PASSED: %d tests total (%.3f ms)" % [total_passed, session_duration_ms])
+		_ensure_index_loaded()
+		return TestIndexRef.TEST_FILES
 
-	quit_tests(1 if total_failed > 0 else 0)
+
+func _get_tests_editor() -> Array[String]:
+	var scanned := _scan_tests()
+
+	var should_regen := true
+
+	if FileAccess.file_exists(INDEX_FILE):
+		var existing = load(INDEX_FILE)
+		if existing and "TEST_FILES" in existing:
+			if existing.TEST_FILES == scanned:
+				should_regen = false
+				TestIndexRef = existing
+
+	if should_regen:
+		_write_index(scanned)
+		TestIndexRef = load(INDEX_FILE)
+
+	return scanned
 
 
-func _run_suite(path: String) -> void:
+func _ensure_index_loaded() -> void:
+	if TestIndexRef != null:
+		return
+
+	if not FileAccess.file_exists(INDEX_FILE):
+		push_error("Missing %s. Run tests in editor first." % INDEX_FILE)
+		return
+
+	TestIndexRef = load(INDEX_FILE)
+
+
+func _scan_tests() -> Array[String]:
+	var dir := DirAccess.open(TEST_DIR)
+	if dir == null:
+		push_error("Could not open %s" % TEST_DIR)
+		return []
+
+	var files: Array[String] = []
+	dir.list_dir_begin()
+
+	var fname := dir.get_next()
+	while fname != "":
+		if not dir.current_is_dir() \
+		and fname.begins_with("test_") \
+		and fname.ends_with(".gd"):
+			files.append("%s/%s" % [TEST_DIR, fname])
+		fname = dir.get_next()
+
+	dir.list_dir_end()
+
+	files.sort()
+	return files
+
+
+func _write_index(files: Array[String]) -> void:
+	var content := "# Auto-generated. Do not edit.\n"
+	content += "class_name TestIndex\n"
+	content += "const TEST_FILES: Array[String] = [\n"
+
+	for f in files:
+		content += "\t\"%s\",\n" % f
+
+	content += "]\n"
+
+	var file := FileAccess.open(INDEX_FILE, FileAccess.WRITE)
+	if file == null:
+		push_error("Could not write to %s" % INDEX_FILE)
+		return
+
+	file.store_string(content)
+	file.close()
+
+
+# =========================================================
+# 🧪 Thread worker
+# =========================================================
+func _thread_run_suite(path: String, thread: Thread) -> void:
+	var out := {}
+
 	var script := load(path)
-
 	if script == null:
-		log_error("Failed to load: %s" % path)
-		total_failed += 1
-		return
-
-	var instance = script.new()
-	if instance == null:
-		log_error("Failed to instantiate: %s" % path)
-		total_failed += 1
-		script = null
-		return
-
-	var methods: Array[String] = []
-	for m in script.get_script_method_list():
-		if m["name"].begins_with("test_"):
-			methods.append(m["name"])
-
-	methods.sort()
-	if methods.is_empty():
-		instance = null
-		script = null
-		return
-
-	var suite_name := path.split("/")[-1].trim_suffix(".gd")
-	log_info("Suite: %s" % suite_name)
-	indent_level += 1
-
-	var suite_passed := 0
-	var suite_failed := 0
-	var suite_start := Time.get_ticks_usec()
-
-	for method in methods:
-		ctx.current_test = "%s.%s" % [suite_name, method]
-
-		var start := Time.get_ticks_usec()
-		var result := _run_test(instance, method)
-		var duration_ms := (Time.get_ticks_usec() - start) / 1000.0
-
-		if result == "":
-			log_success("✓ %s (%.3f ms)" % [method, duration_ms])
-			suite_passed += 1
+		out.error = "Failed to load"
+		out.name = path
+	else:
+		var instance = script.new()
+		if instance == null:
+			out.error = "Failed to instantiate"
+			out.name = path
 		else:
-			log_error("✗ %s: %s (%.3f ms)" % [method, result, duration_ms])
-			suite_failed += 1
+			var methods: Array[String] = []
+			for m in script.get_script_method_list():
+				if m["name"].begins_with("test_"):
+					methods.append(m["name"])
 
-			var stack = get_stack()
-			for frame in stack:
-				if frame is Dictionary and frame.get("source", "").begins_with("res://tests"):
-					log_debug("  at %s:%d" % [frame.get("source", "?"), frame.get("line", 0)])
+			methods.sort()
 
-	var suite_duration_ms := (Time.get_ticks_usec() - suite_start) / 1000.0
+			var suite_name := path.get_file().trim_suffix(".gd")
 
-	indent_level -= 1
-	log_info("Suite result: %s [%d/%d] (%.3f ms)" %
-		[suite_name, suite_passed, suite_passed + suite_failed, suite_duration_ms])
+			var suite_passed := 0
+			var suite_failed := 0
+			var tests := []
 
-	total_passed += suite_passed
-	total_failed += suite_failed
+			for method in methods:
+				var start := Time.get_ticks_usec()
+				var result := _run_test(instance, method)
+				var duration_ms := (Time.get_ticks_usec() - start) / 1000.0
 
-	# Clear references to allow garbage collection
-	instance = null
-	script = null
+				if result == "":
+					suite_passed += 1
+				else:
+					suite_failed += 1
+
+				tests.append({
+					"name": method,
+					"result": result,
+					"time": duration_ms
+				})
+
+			out.name = suite_name
+			out.passed = suite_passed
+			out.failed = suite_failed
+			out.tests = tests
+
+	# return to main thread
+	call_deferred("_on_suite_finished", out)
+
+	thread.wait_to_finish() # ensure cleanup
 
 
 func _run_test(script: Object, method: String) -> String:
@@ -142,6 +227,54 @@ func _run_test(script: Object, method: String) -> String:
 	return result
 
 
+# =========================================================
+# 🧾 Results (main thread)
+# =========================================================
+func _on_suite_finished(r: Dictionary) -> void:
+	_active_threads -= 1
+	_pump_queue()
+
+	if r.has("error"):
+		log_error("%s: %s" % [r.get("name", "?"), r.error])
+		total_failed += 1
+	else:
+		log_info("Suite: %s" % r.name)
+		indent_level += 1
+
+		for t in r.tests:
+			if t.result == "":
+				log_success("✓ %s (%.3f ms)" % [t.name, t.time])
+			else:
+				log_error("✗ %s: %s (%.3f ms)" % [t.name, t.result, t.time])
+
+		log_info("Suite result: %s [%d/%d]" %
+			[r.name, r.passed, r.passed + r.failed])
+
+		indent_level -= 1
+
+		total_passed += r.passed
+		total_failed += r.failed
+
+	_pending_suites -= 1
+
+	if _pending_suites == 0:
+		_finish_all_tests()
+
+
+func _finish_all_tests():
+	log_info("==============================")
+
+	if total_failed > 0:
+		log_error("FAILED: %d passed, %d failed" % [total_passed, total_failed])
+	else:
+		log_success("PASSED: %d tests total" % total_passed)
+
+	quit_tests(1 if total_failed > 0 else 0)
+
+
+# =========================================================
+# 📝 Logging
+# =========================================================
 func log_success(message: String) -> void:
 	_log(message, COLOR_SUCCESS)
 
@@ -167,7 +300,8 @@ func _log(message: String, color: String) -> void:
 		var sc := log_label.get_parent()
 		if sc is ScrollContainer:
 			await get_tree().process_frame
-			sc.scroll_vertical = int(sc.get_v_scroll_bar().max_value)
+			if sc.get_v_scroll_bar():
+				sc.scroll_vertical = int(sc.get_v_scroll_bar().max_value)
 
 
 func quit_tests(code: int) -> void:
