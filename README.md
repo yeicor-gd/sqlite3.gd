@@ -8,8 +8,8 @@ All standard SQLite extensions are included except for Unicode (ICU) support. IC
 
 ## ✨ Features
 
-- **Cross-Platform Support**: Runs on desktop (Windows, macOS, Linux), mobile (Android, iOS), and web (HTML5) platforms.
-- **Demo Project**: includes [demo scene](demo/) to get you started quickly, with a [web version](https://github.com/yeicor-gd/sqlite3.gd/demo/) available.
+- **Cross-Platform Support**: Runs on desktop (Windows, macOS, Linux), mobile (Android, iOS), and web (threads, no threads) platforms.
+- **Demo Project**: includes [demo project](demo/) to get you started quickly, which [you can run in your browser](https://yeicor-gd.github.io/sqlite3.gd/gdext-tests.html).
 - **Comprehensive Documentation**: includes [class references](doc_classes/) for seamless Godot editor integration.
 - **High Performance**: leverages C++ for optimized performance and low-level access.
 - **Easy Integration**: drop-in [GDExtension](https://docs.godotengine.org/en/stable/tutorials/scripting/gdextension/index.html) with simple Godot API bindings.
