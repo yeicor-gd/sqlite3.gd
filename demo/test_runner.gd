@@ -64,6 +64,8 @@ func _ready() -> void:
 # =========================================================
 # 🧵 Thread pool
 # =========================================================
+var _running_threads: Array[Thread] = []
+
 func _pump_queue() -> void:
 	while _active_threads < MAX_THREADS and not _queue.is_empty():
 		var path = _queue.pop_front()
@@ -71,34 +73,46 @@ func _pump_queue() -> void:
 
 		var thread := Thread.new()
 		thread.start(Callable(self, "_thread_run_suite").bind(path, thread))
+		_running_threads.append(thread)
 
 
 # =========================================================
 # 🔍 Test discovery
 # =========================================================
 func _get_test_files() -> Array[String]:
-	if Engine.is_editor_hint():
-		return _get_tests_editor()
-	else:
-		_ensure_index_loaded()
-		return TestIndexRef.TEST_FILES
+	var tests := _get_tests_editor()
+	_ensure_index_loaded()
+	if tests.size() == 0:
+		push_error("Could not scan tests directory %s" % TEST_DIR)
+		return []
+	if TestIndexRef == null:
+		push_error("Missing %s. Run tests in editor first." % INDEX_FILE)
+		return []
+	return TestIndexRef.TEST_FILES
 
 
 func _get_tests_editor() -> Array[String]:
 	var scanned := _scan_tests()
 
+	if scanned.size() == 0:
+		return []
+
 	var should_regen := true
 
 	if FileAccess.file_exists(INDEX_FILE):
-		var existing = load(INDEX_FILE)
-		if existing and "TEST_FILES" in existing:
-			if existing.TEST_FILES == scanned:
+		var idx = load(INDEX_FILE)
+		if idx and "TEST_FILES" in idx:
+			if idx.TEST_FILES == scanned:
 				should_regen = false
-				TestIndexRef = existing
+				TestIndexRef = idx
 
 	if should_regen:
 		_write_index(scanned)
-		TestIndexRef = load(INDEX_FILE)
+		var idx = load(INDEX_FILE)
+		if idx and "TEST_FILES" in idx:
+			TestIndexRef = idx
+		else:
+			TestIndexRef = _create_index_obj(scanned)
 
 	return scanned
 
@@ -108,10 +122,20 @@ func _ensure_index_loaded() -> void:
 		return
 
 	if not FileAccess.file_exists(INDEX_FILE):
-		push_error("Missing %s. Run tests in editor first." % INDEX_FILE)
+		var scanned := _scan_tests()
+		if scanned.size() > 0:
+			TestIndexRef = _create_index_obj(scanned)
+		else:
+			push_error("Missing %s. Run tests in editor first." % INDEX_FILE)
 		return
 
 	TestIndexRef = load(INDEX_FILE)
+
+
+func _create_index_obj(files: Array[String]) -> RefCounted:
+	var idx := RefCounted.new()
+	idx.set("TEST_FILES", files)
+	return idx
 
 
 func _scan_tests() -> Array[String]:
@@ -161,6 +185,7 @@ func _write_index(files: Array[String]) -> void:
 # =========================================================
 func _thread_run_suite(path: String, thread: Thread) -> void:
 	var out := {}
+	var t := thread
 
 	var script := load(path)
 	if script == null:
@@ -207,9 +232,7 @@ func _thread_run_suite(path: String, thread: Thread) -> void:
 			out.tests = tests
 
 	# return to main thread
-	call_deferred("_on_suite_finished", out)
-
-	thread.wait_to_finish() # ensure cleanup
+	call_deferred("_on_suite_finished", out, t)
 
 
 func _run_test(script: Object, method: String) -> String:
@@ -230,7 +253,10 @@ func _run_test(script: Object, method: String) -> String:
 # =========================================================
 # 🧾 Results (main thread)
 # =========================================================
-func _on_suite_finished(r: Dictionary) -> void:
+func _on_suite_finished(r: Dictionary, thread: Thread) -> void:
+	if thread and _running_threads.has(thread):
+		_cleanup_threads(_running_threads.find(thread))
+
 	_active_threads -= 1
 	_pump_queue()
 
@@ -259,6 +285,14 @@ func _on_suite_finished(r: Dictionary) -> void:
 
 	if _pending_suites == 0:
 		_finish_all_tests()
+
+
+func _cleanup_threads(idx: int) -> void:
+	if idx < _running_threads.size():
+		var t := _running_threads[idx]
+		_running_threads.remove_at(idx)
+		if t:
+			t.wait_to_finish()
 
 
 func _finish_all_tests():
