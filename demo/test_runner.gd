@@ -1,30 +1,37 @@
 extends Node
 class_name TestRunner
 
+# =========================================================
+# 🎨 Colors
+# =========================================================
 const COLOR_SUCCESS := "#22c55e"
 const COLOR_ERROR := "#ef4444"
 const COLOR_INFO := "#3b82f6"
 const COLOR_DEBUG := "#9ca3af"
 
+# =========================================================
+# 📁 Config
+# =========================================================
 const TEST_DIR := "res://tests"
 const INDEX_FILE := "res://tests/index.gd"
 
-const MAX_THREADS := 4 # ← thread pool size
-
+# =========================================================
+# 📊 State
+# =========================================================
 var log_label: RichTextLabel
-var indent_level: int = 0
-var total_passed: int = 0
-var total_failed: int = 0
-var _pending_suites := 0
-var _active_threads := 0
-var _queue: Array[String] = []
+var indent_level := 0
+
+var total_passed := 0
+var total_failed := 0
 
 var is_headless := false
 var TestIndexRef = null
 
 static var ctx := TestContext.new()
 
-
+# =========================================================
+# 🧠 Context (unchanged API)
+# =========================================================
 class TestContext:
 	var runner: TestRunner = null
 	var current_test: String = ""
@@ -41,7 +48,9 @@ class TestContext:
 		if runner:
 			runner._log("[%s] %s" % [current_test, msg], COLOR_ERROR)
 
-
+# =========================================================
+# 🚀 Entry
+# =========================================================
 func _ready() -> void:
 	is_headless = DisplayServer.get_name() == "headless"
 
@@ -55,56 +64,34 @@ func _ready() -> void:
 	indent_level += 1
 
 	var test_files := _get_test_files()
-	_pending_suites = test_files.size()
-	_queue = test_files.duplicate()
+	if test_files.is_empty():
+		log_error("No test files found")
+		_finish_all_tests()
+		return
 
-	_pump_queue()
+	for path in test_files:
+		var result := _run_suite(path)
+		_report_suite(result)
 
-
-# =========================================================
-# 🧵 Thread pool
-# =========================================================
-var _running_threads: Array[Thread] = []
-
-func _pump_queue() -> void:
-	while _active_threads < MAX_THREADS and not _queue.is_empty():
-		var path = _queue.pop_front()
-		_active_threads += 1
-
-		var thread := Thread.new()
-		thread.start(Callable(self, "_thread_run_suite").bind(path, thread))
-		_running_threads.append(thread)
-
+	_finish_all_tests()
 
 # =========================================================
 # 🔍 Test discovery
 # =========================================================
 func _get_test_files() -> Array[String]:
-	var tests := _get_tests_editor()
-	_ensure_index_loaded()
-	if tests.size() == 0:
-		push_error("Could not scan tests directory %s" % TEST_DIR)
-		return []
-	if TestIndexRef == null:
-		push_error("Missing %s. Run tests in editor first." % INDEX_FILE)
-		return []
-	return TestIndexRef.TEST_FILES
-
-
-func _get_tests_editor() -> Array[String]:
 	var scanned := _scan_tests()
 
-	if scanned.size() == 0:
+	if scanned.is_empty():
+		push_error("Could not scan tests directory %s" % TEST_DIR)
 		return []
 
 	var should_regen := true
 
 	if FileAccess.file_exists(INDEX_FILE):
 		var idx = load(INDEX_FILE)
-		if idx and "TEST_FILES" in idx:
-			if idx.TEST_FILES == scanned:
-				should_regen = false
-				TestIndexRef = idx
+		if idx and "TEST_FILES" in idx and idx.TEST_FILES == scanned:
+			TestIndexRef = idx
+			should_regen = false
 
 	if should_regen:
 		_write_index(scanned)
@@ -114,28 +101,7 @@ func _get_tests_editor() -> Array[String]:
 		else:
 			TestIndexRef = _create_index_obj(scanned)
 
-	return scanned
-
-
-func _ensure_index_loaded() -> void:
-	if TestIndexRef != null:
-		return
-
-	if not FileAccess.file_exists(INDEX_FILE):
-		var scanned := _scan_tests()
-		if scanned.size() > 0:
-			TestIndexRef = _create_index_obj(scanned)
-		else:
-			push_error("Missing %s. Run tests in editor first." % INDEX_FILE)
-		return
-
-	TestIndexRef = load(INDEX_FILE)
-
-
-func _create_index_obj(files: Array[String]) -> RefCounted:
-	var idx := RefCounted.new()
-	idx.set("TEST_FILES", files)
-	return idx
+	return TestIndexRef.TEST_FILES if TestIndexRef else scanned
 
 
 func _scan_tests() -> Array[String]:
@@ -156,7 +122,6 @@ func _scan_tests() -> Array[String]:
 		fname = dir.get_next()
 
 	dir.list_dir_end()
-
 	files.sort()
 	return files
 
@@ -172,130 +137,140 @@ func _write_index(files: Array[String]) -> void:
 	content += "]\n"
 
 	var file := FileAccess.open(INDEX_FILE, FileAccess.WRITE)
-	if file == null:
+	if file:
+		file.store_string(content)
+		file.close()
+	else:
 		push_error("Could not write to %s" % INDEX_FILE)
-		return
 
-	file.store_string(content)
-	file.close()
 
+func _create_index_obj(files: Array[String]) -> RefCounted:
+	var idx := RefCounted.new()
+	idx.set("TEST_FILES", files)
+	return idx
 
 # =========================================================
-# 🧪 Thread worker
+# 🧪 Suite execution
 # =========================================================
-func _thread_run_suite(path: String, thread: Thread) -> void:
+func _run_suite(path: String) -> Dictionary:
 	var out := {}
-	var t := thread
 
+	# -------------------------
+	# Load + compile
+	# -------------------------
 	var script := load(path)
-	if script == null:
+
+	if script == null or not (script is GDScript):
 		out.error = "Failed to load"
 		out.name = path
-	else:
-		var instance = script.new()
-		if instance == null:
-			out.error = "Failed to instantiate"
-			out.name = path
+		return out
+
+	if script.reload() != OK:
+		out.error = "Parse error"
+		out.name = path
+		return out
+
+	if not script.can_instantiate():
+		out.error = "Cannot instantiate"
+		out.name = path
+		return out
+
+	var instance = script.new()
+	if instance == null:
+		out.error = "Instantiation failed"
+		out.name = path
+		return out
+
+	# -------------------------
+	# Discover tests
+	# -------------------------
+	var methods: Array[String] = []
+	for m in script.get_script_method_list():
+		if m["name"].begins_with("test_"):
+			methods.append(m["name"])
+
+	methods.sort()
+
+	var suite_name := path.get_file().trim_suffix(".gd")
+	var passed := 0
+	var failed := 0
+	var tests := []
+
+	# -------------------------
+	# Run tests
+	# -------------------------
+	for method in methods:
+		ctx.current_test = method
+
+		var start := Time.get_ticks_usec()
+		var result := _run_test(instance, method)
+		var duration := (Time.get_ticks_usec() - start) / 1000.0
+
+		if result == "":
+			passed += 1
 		else:
-			var methods: Array[String] = []
-			for m in script.get_script_method_list():
-				if m["name"].begins_with("test_"):
-					methods.append(m["name"])
+			failed += 1
 
-			methods.sort()
+		tests.append({
+			"name": method,
+			"result": result,
+			"time": duration
+		})
 
-			var suite_name := path.get_file().trim_suffix(".gd")
+	out.name = suite_name
+	out.passed = passed
+	out.failed = failed
+	out.tests = tests
 
-			var suite_passed := 0
-			var suite_failed := 0
-			var tests := []
-
-			for method in methods:
-				var start := Time.get_ticks_usec()
-				var result := _run_test(instance, method)
-				var duration_ms := (Time.get_ticks_usec() - start) / 1000.0
-
-				if result == "":
-					suite_passed += 1
-				else:
-					suite_failed += 1
-
-				tests.append({
-					"name": method,
-					"result": result,
-					"time": duration_ms
-				})
-
-			out.name = suite_name
-			out.passed = suite_passed
-			out.failed = suite_failed
-			out.tests = tests
-
-	# return to main thread
-	call_deferred("_on_suite_finished", out, t)
+	return out
 
 
-func _run_test(script: Object, method: String) -> String:
-	if not script.has_method(method):
+func _run_test(instance: Object, method: String) -> String:
+	if not instance.has_method(method):
 		return "Method not found"
 
-	var result = script.call(method)
+	var result = instance.call(method)
 
 	if result == null:
 		return ""
 
 	if typeof(result) != TYPE_STRING:
-		return "Invalid return type: expected String"
+		return "Invalid return type (expected String)"
 
 	return result
 
-
 # =========================================================
-# 🧾 Results (main thread)
+# 🧾 Reporting
 # =========================================================
-func _on_suite_finished(r: Dictionary, thread: Thread) -> void:
-	if thread and _running_threads.has(thread):
-		_cleanup_threads(_running_threads.find(thread))
-
-	_active_threads -= 1
-	_pump_queue()
-
+func _report_suite(r: Dictionary) -> void:
 	if r.has("error"):
 		log_error("%s: %s" % [r.get("name", "?"), r.error])
 		total_failed += 1
-	else:
-		log_info("Suite: %s" % r.name)
-		indent_level += 1
 
-		for t in r.tests:
-			if t.result == "":
-				log_success("✓ %s (%.3f ms)" % [t.name, t.time])
-			else:
-				log_error("✗ %s: %s (%.3f ms)" % [t.name, t.result, t.time])
+		if is_headless:
+			log_error("Fatal error → aborting early")
+			_finish_all_tests()
+		return
 
-		log_info("Suite result: %s [%d/%d]" %
-			[r.name, r.passed, r.passed + r.failed])
+	log_info("Suite: %s" % r.name)
+	indent_level += 1
 
-		indent_level -= 1
+	for t in r.tests:
+		if t.result == "":
+			log_success("✓ %s (%.3f ms)" % [t.name, t.time])
+		else:
+			log_error("✗ %s: %s (%.3f ms)" % [t.name, t.result, t.time])
 
-		total_passed += r.passed
-		total_failed += r.failed
+	log_info("Suite result: %s [%d/%d]" %
+		[r.name, r.passed, r.passed + r.failed])
 
-	_pending_suites -= 1
+	indent_level -= 1
 
-	if _pending_suites == 0:
-		_finish_all_tests()
-
-
-func _cleanup_threads(idx: int) -> void:
-	if idx < _running_threads.size():
-		var t := _running_threads[idx]
-		_running_threads.remove_at(idx)
-		if t:
-			t.wait_to_finish()
+	total_passed += r.passed
+	total_failed += r.failed
 
 
-func _finish_all_tests():
+func _finish_all_tests() -> void:
 	log_info("==============================")
 
 	if total_failed > 0:
@@ -305,9 +280,8 @@ func _finish_all_tests():
 
 	quit_tests(1 if total_failed > 0 else 0)
 
-
 # =========================================================
-# 📝 Logging
+# 📝 Logging (unchanged)
 # =========================================================
 func log_success(message: String) -> void:
 	_log(message, COLOR_SUCCESS)
