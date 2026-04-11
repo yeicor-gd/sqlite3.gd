@@ -126,10 +126,10 @@ cd "$SCRIPT_DIR"
 # Editor error detection removed as handle_crash for signals seems randomly triggered even on empty projects, likely due to ASAN/LSAN false positives in the system Godot build. Only runtime errors will be checked.
 if [ "$GODOT_VERSION" = "system" ]; then
     $GODOT_BIN --editor --path "$SCRIPT_DIR/demo" --headless --quit || true # 2>&1 | tee "$RUNTIME_LOG" || true
-    $GODOT_BIN --path "$SCRIPT_DIR/demo" --headless 2>&1 | tee -a "$RUNTIME_LOG" || true
+    $GODOT_BIN --path "$SCRIPT_DIR/demo" --headless --quit 2>&1 | tee -a "$RUNTIME_LOG" || true
 else
     LD_PRELOAD=$(gcc -print-file-name=libasan.so) LSAN_OPTIONS=detect_leaks=0 $GODOT_BIN --editor --path "$SCRIPT_DIR/demo" --headless --quit || true # 2>&1 | tee "$RUNTIME_LOG" || true
-    LD_PRELOAD=$(gcc -print-file-name=libasan.so) $GODOT_BIN --path "$SCRIPT_DIR/demo" --headless 2>&1 | tee -a "$RUNTIME_LOG" || true
+    LD_PRELOAD=$(gcc -print-file-name=libasan.so) $GODOT_BIN --path "$SCRIPT_DIR/demo" --headless --quit 2>&1 | tee -a "$RUNTIME_LOG" || true
 fi
 
 _extract_runtime_errors() {

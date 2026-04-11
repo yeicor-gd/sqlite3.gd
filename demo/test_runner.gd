@@ -56,17 +56,20 @@ func _ready() -> void:
 	log_info("Starting test session")
 	indent_level += 1
 
+	call_deferred("_run_tests_safely")
+
+func _run_tests_safely() -> void:
 	var test_files := _get_test_files()
 	if test_files.is_empty():
 		log_error("No test files found")
-		_finish_all_tests()
+		call_deferred("_finish_all_tests")
 		return
 
 	for path in test_files:
 		var result := _run_suite(path)
 		_report_suite(result)
 
-	_finish_all_tests()
+	call_deferred("_finish_all_tests")
 
 # =========================================================
 # 🔍 Test discovery (IMPROVED)
@@ -84,7 +87,7 @@ func _get_test_files() -> Array[String]:
 
 		var idx = load(INDEX_FILE)
 		if idx:
-			var constants := idx.get_script_constant_map()
+			var constants: Dictionary = idx.get_script_constant_map()
 			if constants.has("TEST_FILES"):
 				return constants["TEST_FILES"]
 
@@ -97,7 +100,7 @@ func _get_test_files() -> Array[String]:
 	if index_exists:
 		var idx = load(INDEX_FILE)
 		if idx:
-			var constants := idx.get_script_constant_map()
+			var constants: Dictionary = idx.get_script_constant_map()
 			if constants.has("TEST_FILES"):
 				log_debug(
 					"Test directory scan failed. Using cached index instead. "
@@ -120,7 +123,7 @@ func _get_test_files() -> Array[String]:
 func _index_matches(scanned: Array[String]) -> bool:
 	var idx = load(INDEX_FILE)
 	if idx:
-		var constants := idx.get_script_constant_map()
+		var constants: Dictionary = idx.get_script_constant_map()
 		if constants.has("TEST_FILES"):
 			return constants["TEST_FILES"] == scanned
 	return false
