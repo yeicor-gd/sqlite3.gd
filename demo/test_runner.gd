@@ -24,9 +24,6 @@ var indent_level := 0
 var total_passed := 0
 var total_failed := 0
 
-var is_headless := false
-var TestIndexRef = null
-
 static var ctx := TestContext.new()
 
 # =========================================================
@@ -52,35 +49,34 @@ class TestContext:
 # 🚀 Entry
 # =========================================================
 func _ready() -> void:
-	is_headless = DisplayServer.get_name() == "headless"
-
-	if not is_headless:
-		log_label = $ScrollContainer/LogLabel
-		log_label.text = ""
-
+	log_label = $ScrollContainer/LogLabel
+	log_label.text = ""
 	ctx.runner = self
 
 	log_info("Starting test session")
 	indent_level += 1
 
+	call_deferred("_run_tests_safely")
+
+func _run_tests_safely() -> void:
 	var test_files := _get_test_files()
 	if test_files.is_empty():
 		log_error("No test files found")
-		_finish_all_tests()
+		call_deferred("_finish_all_tests")
 		return
 
 	for path in test_files:
 		var result := _run_suite(path)
 		_report_suite(result)
 
-	_finish_all_tests()
+	call_deferred("_finish_all_tests")
 
 # =========================================================
 # 🔍 Test discovery (IMPROVED)
 # =========================================================
 func _get_test_files() -> Array[String]:
 	var scanned := _scan_tests()
-	var index_exists := FileAccess.file_exists(INDEX_FILE)
+	var index_exists := ResourceLoader.exists(INDEX_FILE)
 
 	# ----------------------------------------
 	# 1. If scan succeeded → use it + refresh index
@@ -90,9 +86,10 @@ func _get_test_files() -> Array[String]:
 			_write_index(scanned)
 
 		var idx = load(INDEX_FILE)
-		if idx and "TEST_FILES" in idx:
-			TestIndexRef = idx
-			return TestIndexRef.TEST_FILES
+		if idx:
+			var constants: Dictionary = idx.get_script_constant_map()
+			if constants.has("TEST_FILES"):
+				return constants["TEST_FILES"]
 
 		# fallback safety
 		return scanned
@@ -102,15 +99,14 @@ func _get_test_files() -> Array[String]:
 	# ----------------------------------------
 	if index_exists:
 		var idx = load(INDEX_FILE)
-		if idx and "TEST_FILES" in idx:
-			TestIndexRef = idx
-
-			log_debug(
-				"Test directory scan failed. Using cached index instead. "
-				+ "To refresh test discovery, run from project files (not an exported build)."
-			)
-
-			return TestIndexRef.TEST_FILES
+		if idx:
+			var constants: Dictionary = idx.get_script_constant_map()
+			if constants.has("TEST_FILES"):
+				log_debug(
+					"Test directory scan failed. Using cached index instead. "
+					+ "To refresh test discovery, run from project files (not an exported build)."
+				)
+				return constants["TEST_FILES"]
 
 	# ----------------------------------------
 	# 3. Total failure
@@ -126,8 +122,10 @@ func _get_test_files() -> Array[String]:
 
 func _index_matches(scanned: Array[String]) -> bool:
 	var idx = load(INDEX_FILE)
-	if idx and "TEST_FILES" in idx:
-		return idx.TEST_FILES == scanned
+	if idx:
+		var constants: Dictionary = idx.get_script_constant_map()
+		if constants.has("TEST_FILES"):
+			return constants["TEST_FILES"] == scanned
 	return false
 
 
@@ -263,10 +261,6 @@ func _report_suite(r: Dictionary) -> void:
 	if r.has("error"):
 		log_error("%s: %s" % [r.get("name", "?"), r.error])
 		total_failed += 1
-
-		if is_headless:
-			log_error("Fatal error → aborting early")
-			_finish_all_tests()
 		return
 
 	log_info("Suite: %s" % r.name)
@@ -319,7 +313,7 @@ func _log(message: String, color: String) -> void:
 
 	print_rich(formatted)
 
-	if not is_headless and log_label:
+	if log_label:
 		log_label.text += ("\n" if log_label.text != "" else "") + formatted
 
 		var sc := log_label.get_parent()
