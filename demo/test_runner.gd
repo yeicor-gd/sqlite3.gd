@@ -80,7 +80,7 @@ func _ready() -> void:
 # =========================================================
 func _get_test_files() -> Array[String]:
 	var scanned := _scan_tests()
-	var index_exists := FileAccess.file_exists(INDEX_FILE)
+	var index_exists := ResourceLoader.exists(INDEX_FILE)
 
 	# ----------------------------------------
 	# 1. If scan succeeded → use it + refresh index
@@ -90,9 +90,11 @@ func _get_test_files() -> Array[String]:
 			_write_index(scanned)
 
 		var idx = load(INDEX_FILE)
-		if idx and "TEST_FILES" in idx:
-			TestIndexRef = idx
-			return TestIndexRef.TEST_FILES
+		if idx:
+			var constants := idx.get_script_constant_map()
+			if constants.has("TEST_FILES"):
+				TestIndexRef = idx
+				return constants["TEST_FILES"]
 
 		# fallback safety
 		return scanned
@@ -102,15 +104,17 @@ func _get_test_files() -> Array[String]:
 	# ----------------------------------------
 	if index_exists:
 		var idx = load(INDEX_FILE)
-		if idx and "TEST_FILES" in idx:
-			TestIndexRef = idx
+		if idx:
+			var constants := idx.get_script_constant_map()
+			if constants.has("TEST_FILES"):
+				TestIndexRef = idx
 
-			log_debug(
-				"Test directory scan failed. Using cached index instead. "
-				+ "To refresh test discovery, run from project files (not an exported build)."
-			)
+				log_debug(
+					"Test directory scan failed. Using cached index instead. "
+					+ "To refresh test discovery, run from project files (not an exported build)."
+				)
 
-			return TestIndexRef.TEST_FILES
+				return constants["TEST_FILES"]
 
 	# ----------------------------------------
 	# 3. Total failure
@@ -126,8 +130,10 @@ func _get_test_files() -> Array[String]:
 
 func _index_matches(scanned: Array[String]) -> bool:
 	var idx = load(INDEX_FILE)
-	if idx and "TEST_FILES" in idx:
-		return idx.TEST_FILES == scanned
+	if idx:
+		var constants := idx.get_script_constant_map()
+		if constants.has("TEST_FILES"):
+			return constants["TEST_FILES"] == scanned
 	return false
 
 
