@@ -30,7 +30,7 @@ var TestIndexRef = null
 static var ctx := TestContext.new()
 
 # =========================================================
-# 🧠 Context (unchanged API)
+# 🧠 Context
 # =========================================================
 class TestContext:
 	var runner: TestRunner = null
@@ -76,38 +76,64 @@ func _ready() -> void:
 	_finish_all_tests()
 
 # =========================================================
-# 🔍 Test discovery
+# 🔍 Test discovery (IMPROVED)
 # =========================================================
 func _get_test_files() -> Array[String]:
 	var scanned := _scan_tests()
+	var index_exists := FileAccess.file_exists(INDEX_FILE)
 
-	if scanned.is_empty():
-		push_error("Could not scan tests directory %s" % TEST_DIR)
-		return []
+	# ----------------------------------------
+	# 1. If scan succeeded → use it + refresh index
+	# ----------------------------------------
+	if not scanned.is_empty():
+		if not index_exists or not _index_matches(scanned):
+			_write_index(scanned)
 
-	var should_regen := true
-
-	if FileAccess.file_exists(INDEX_FILE):
-		var idx = load(INDEX_FILE)
-		if idx and "TEST_FILES" in idx and idx.TEST_FILES == scanned:
-			TestIndexRef = idx
-			should_regen = false
-
-	if should_regen:
-		_write_index(scanned)
 		var idx = load(INDEX_FILE)
 		if idx and "TEST_FILES" in idx:
 			TestIndexRef = idx
-		else:
-			TestIndexRef = _create_index_obj(scanned)
+			return TestIndexRef.TEST_FILES
 
-	return TestIndexRef.TEST_FILES if TestIndexRef else scanned
+		# fallback safety
+		return scanned
+
+	# ----------------------------------------
+	# 2. Scan failed → fallback to index if exists
+	# ----------------------------------------
+	if index_exists:
+		var idx = load(INDEX_FILE)
+		if idx and "TEST_FILES" in idx:
+			TestIndexRef = idx
+
+			log_debug(
+				"Test directory scan failed. Using cached index instead. "
+				+ "To refresh test discovery, run from project files (not an exported build)."
+			)
+
+			return TestIndexRef.TEST_FILES
+
+	# ----------------------------------------
+	# 3. Total failure
+	# ----------------------------------------
+	push_error(
+		"Could not scan tests directory (" + TEST_DIR + ") and no valid index found.\n"
+		+ "Test discovery requires running from project files (editor or source project), "
+		+ "not from an exported build."
+	)
+
+	return []
+
+
+func _index_matches(scanned: Array[String]) -> bool:
+	var idx = load(INDEX_FILE)
+	if idx and "TEST_FILES" in idx:
+		return idx.TEST_FILES == scanned
+	return false
 
 
 func _scan_tests() -> Array[String]:
 	var dir := DirAccess.open(TEST_DIR)
 	if dir == null:
-		push_error("Could not open %s" % TEST_DIR)
 		return []
 
 	var files: Array[String] = []
@@ -155,9 +181,6 @@ func _create_index_obj(files: Array[String]) -> RefCounted:
 func _run_suite(path: String) -> Dictionary:
 	var out := {}
 
-	# -------------------------
-	# Load + compile
-	# -------------------------
 	var script := load(path)
 
 	if script == null or not (script is GDScript):
@@ -181,9 +204,6 @@ func _run_suite(path: String) -> Dictionary:
 		out.name = path
 		return out
 
-	# -------------------------
-	# Discover tests
-	# -------------------------
 	var methods: Array[String] = []
 	for m in script.get_script_method_list():
 		if m["name"].begins_with("test_"):
@@ -196,9 +216,6 @@ func _run_suite(path: String) -> Dictionary:
 	var failed := 0
 	var tests := []
 
-	# -------------------------
-	# Run tests
-	# -------------------------
 	for method in methods:
 		ctx.current_test = method
 
@@ -281,7 +298,7 @@ func _finish_all_tests() -> void:
 	quit_tests(1 if total_failed > 0 else 0)
 
 # =========================================================
-# 📝 Logging (unchanged)
+# 📝 Logging
 # =========================================================
 func log_success(message: String) -> void:
 	_log(message, COLOR_SUCCESS)
