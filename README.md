@@ -20,7 +20,7 @@ All standard SQLite extensions are included except for Unicode (ICU) support. IC
 
 1. **Download**: [latest release](https://github.com/yeicor-gd/sqlite3.gd/releases) or [nightly builds](https://github.com/yeicor-gd/sqlite3.gd/actions) (look for `...-addon.zip`).
 2. **Extract**: the downloaded `...-addon.zip` into your project's root.
-3. **Profit**: see [demo/demo.gd](demo/demo.gd) for a complete example.
+3. **Profit**: check out [demo/tests](demo/tests) for examples showing how to use the library.
 
 ## 🧩 Using this project as a template for other GDExtensions
 
