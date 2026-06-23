@@ -128,8 +128,8 @@ jobs:
             { vcpkg_triplet: x64-windows-static, os: windows-2025 }, # MSVC instead of mingw
             { vcpkg_triplet: x86-windows-static, os: windows-2025 }, # MSVC instead of mingw
             { vcpkg_triplet: arm64-windows-static, os: windows-2025 }, # MSVC instead of mingw
-            { vcpkg_triplet: arm64-osx, os: macos-15 },
-            { vcpkg_triplet: x64-osx, os: macos-15 },
+            { vcpkg_triplet: arm64-osx, os: macos-26 },
+            { vcpkg_triplet: x64-osx, os: macos-26 },
             {
               vcpkg_triplet: wasm32-emscripten,
               os: ubuntu-24.04,
@@ -140,7 +140,7 @@ jobs:
             { vcpkg_triplet: x86-android, os: ubuntu-24.04 },
             { vcpkg_triplet: arm64-android, os: ubuntu-24.04 },
             { vcpkg_triplet: arm-neon-android, os: ubuntu-24.04 },
-            { vcpkg_triplet: arm64-ios, os: macos-15 },
+            { vcpkg_triplet: arm64-ios, os: macos-26 },
           ]
         # Note: vcpkg forces building both Debug and Release on a single run. This is not the same as the templates!
         target-type: [template_debug, template_release]
@@ -332,7 +332,7 @@ jobs:
             { os: ubuntu-24.04, export_name: Web },
             { os: ubuntu-24.04, export_name: Android },
             { os: windows-2025, export_name: "Windows Desktop" },
-            { os: macos-15, export_name: macOS },
+            { os: macos-26, export_name: macOS },
             { os: ubuntu-24.04, export_name: iOS }, # I do not have a developer account (which is required to actually build the app on macos), instead use ubuntu and just export the code to compile.
           ]
         mode: [debug, release]
